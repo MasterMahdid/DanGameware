@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KhHorde3D", "KhHorde3D\KhHorde3D.vcxproj", "{1AC4A86E-5E37-472D-8BB8-32786C7CB849}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1AC4A86E-5E37-472D-8BB8-32786C7CB849}.Debug|x86.ActiveCfg = Debug|Win32
+		{1AC4A86E-5E37-472D-8BB8-32786C7CB849}.Debug|x86.Build.0 = Debug|Win32
+		{1AC4A86E-5E37-472D-8BB8-32786C7CB849}.Release|x86.ActiveCfg = Release|Win32
+		{1AC4A86E-5E37-472D-8BB8-32786C7CB849}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
