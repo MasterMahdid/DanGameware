@@ -5,7 +5,7 @@
 #include "SoundEngine.h"
 namespace khsound
 {
-	const char* content_dir = "D:\\Content";
+	const char* content_dir = getenv("ALVAHSHI_CONTENT");
 	std::unordered_map<SND_ID, SoLoud::Wav*> sounds;
 	SoLoud::Soloud soloud;  // SoLoud engine core
 	void init_sound()

@@ -1,5 +1,6 @@
 #include <thread>
 #include <fstream>
+#include <stdlib.h>
 #include <Horde3D.h>
 #include "Horde3DUtils.h"
 #include "MapManager.h"
@@ -9,6 +10,7 @@
 #include "SoundEngine.h"
 #include "enemy.h"
 #include "ai.h"
+
 
 extern physicEngine g_phyis;
 extern std::vector<GameObject*> gameObjects_array;
@@ -29,6 +31,8 @@ void removeAll()
 H3DRes fireparticle;
 void mapLoad(const char* name)
 {
+	const char* baseq3 = getenv("ALVAHSHI_BASEQ3");
+	const char* content_dir = getenv("ALVAHSHI_CONTENT");
 	//1- unload the previous map
 	for (const auto& go : gameObjects_array)
 	{
@@ -65,7 +69,7 @@ void mapLoad(const char* name)
 	WeaponAxe::initRes();
 	Enemy::add_res();
 	//4-load resources from disk
-	h3dutLoadResourcesFromDisk("D:\\Content\\");
+	h3dutLoadResourcesFromDisk(content_dir);
 	
 	
 	
@@ -114,7 +118,7 @@ void mapLoad(const char* name)
 
 	
 	char mapfn[1024];
-	sprintf(mapfn, "D:\\Alvahshi1\\newstructure\\editor\\gamedist\\basealv\\maps\\%s.map", name);
+	sprintf(mapfn, "%s\\maps\\%s.map", baseq3,name);
 	
 	add_light_from_map(mapfn);
 	add_player_from_map(mapfn);

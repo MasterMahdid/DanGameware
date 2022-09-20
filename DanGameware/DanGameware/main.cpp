@@ -173,9 +173,9 @@ void initGame(int winWidth, int winHeight)
 	_panelMatRes = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
 	H3DRes pipeRes = h3dAddResource(H3DResTypes::Pipeline, "pipelines/alve.pipeline.xml", 0);
 
+	const char* content_dir = getenv("ALVAHSHI_CONTENT");
 
-
-	h3dutLoadResourcesFromDisk("D:\\Content\\");
+	h3dutLoadResourcesFromDisk(content_dir);
 
 
 	main_camera = h3dAddCameraNode(H3DRootNode, "Camera", pipeRes);
