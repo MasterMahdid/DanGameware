@@ -1,6 +1,7 @@
 #include <thread>
 #include <fstream>
 #include <stdlib.h>
+#include <fstream>
 #include <Horde3D.h>
 #include "Horde3DUtils.h"
 #include "MapManager.h"
@@ -29,6 +30,25 @@ void removeAll()
 	
 }
 H3DRes fireparticle;
+void* loadResourceData(const char* name, const char* content_dir, size_t& out_size)
+{
+	char path[1024] = {};
+	sprintf(path, "%s/%s", content_dir, name);
+	std::ifstream inf;
+	inf.clear();
+	inf.open(path, std::ios::binary);
+	if (inf.good() == false)
+	{
+		return nullptr;
+	}
+	inf.seekg(0, std::ios::end);
+	out_size = inf.tellg();
+	char* ret = new char[out_size];
+	inf.seekg(0);
+	inf.read(ret, out_size);
+	inf.close();
+	return ret;
+}
 void mapLoad(const char* name)
 {
 	const char* baseq3 = getenv("ALVAHSHI_BASEQ3");
@@ -50,17 +70,22 @@ void mapLoad(const char* name)
 	char scene_path[1024];
 	sprintf(scene_path, "maps/%s/%s.scene.xml", name, name);
 
+	char lightmap_path[1024];
+	sprintf(lightmap_path, "maps/%s/lm_0000.tga", name, name);
+
 	H3DRes skyBoxRes = h3dAddResource(H3DResTypes::SceneGraph, "models/skybox/skybox.scene.xml", 0);
+	H3DRes lightmapRes = h3dAddResource(H3DResTypes::Texture, lightmap_path, 0);
 	
 	fireparticle = h3dAddResource(H3DResTypes::SceneGraph, "particles/fire/fire.scene.xml", 0);
 	
 	auto level_mesh_res = h3dAddResource(H3DResTypes::Geometry, geo_path, 0);
 	H3DRes envRes = h3dAddResource(H3DResTypes::SceneGraph, scene_path, 0);
 
-	H3DRes lmres = h3dAddResource(H3DResTypes::Texture, "models/esatwall_light/lm_0000.tga", 0);
-	H3DRes lmres2 = h3dAddResource(H3DResTypes::Texture, "models/esatwall_light/lm_0000.tga", 0);
-	h3dUnloadResource(lmres);
-	h3dUnloadResource(lmres2);
+	//TODO unload lightmaps
+	//H3DRes lmres = h3dAddResource(H3DResTypes::Texture, "models/esatwall_light/lm_0000.tga", 0);
+	//H3DRes lmres2 = h3dAddResource(H3DResTypes::Texture, "models/esatwall_light/lm_0000.tga", 0);
+	//h3dUnloadResource(lmres);
+	//h3dUnloadResource(lmres2);
 	h3dUnloadResource(level_mesh_res);
 	h3dUnloadResource(envRes);
 	//3- load entities
@@ -70,6 +95,7 @@ void mapLoad(const char* name)
 	Enemy::add_res();
 	//4-load resources from disk
 	h3dutLoadResourcesFromDisk(content_dir);
+
 	
 	
 	
@@ -78,6 +104,50 @@ void mapLoad(const char* name)
 	H3DNode env = h3dAddNodes(H3DRootNode, envRes);
 	h3dSetNodeTransform(env, 0, 0, 0, 0, 0, 0, 1, 1, 1);
 
+	int num = h3dFindNodes(env, "", H3DNodeTypes::Mesh);
+	for (size_t i = 0; i < num; i++)
+	{
+		auto node = h3dGetNodeFindResult(i);
+		auto mat = h3dGetNodeParamI(node, H3DMesh::MatResI);
+		auto matname = h3dGetResName(mat);
+		
+		size_t sz;
+		char* data = (char*)loadResourceData(matname,content_dir,sz);
+		if (data == nullptr)
+			continue;
+		
+		std::string addd = std::string("<Sampler name=\"lightMap\" map=\"")+std::string(lightmap_path)+std::string("\" /></Material>");
+
+
+		auto str = strstr(data, "</Material>");
+		data[str - data] = 0;
+		auto dddsd = std::string(data) + addd;
+		auto ffres = dddsd.c_str();
+		sz = dddsd.length();
+
+
+
+
+
+
+
+
+		char matname2[1024];
+		sprintf(matname2, "runtime/%s",matname);
+
+		auto mat2res = h3dAddResource(H3DResTypes::Material, matname2, 0);
+		
+		h3dLoadResource(mat2res, ffres, sz);
+
+		delete[] data;
+		
+
+		h3dSetNodeParamI(node, H3DMesh::MatResI, mat2res);
+
+
+		
+
+	}
 	// Add skybox
 	H3DNode sky = h3dAddNodes(H3DRootNode, skyBoxRes);
 	h3dSetNodeTransform(sky, 0, 0, 0, 0, 0, 0, 18000, 4000, 18000);
@@ -175,7 +245,7 @@ void addLight(Vector3df pos,Vector3df diff,float rad,float intensity)
 	//h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
 	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, rad);
 	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0, intensity);
-	h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 3);
+	h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 0);
 	h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, 0.003f);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 0, diff.x);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, diff.y);
