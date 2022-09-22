@@ -17,6 +17,7 @@
 #include <vector>
 #include "utMath.h"
 #include <irrlicht.h>
+#include "CQ3LevelMesh.h";
 
 using namespace Horde3D;
 
@@ -47,7 +48,7 @@ struct Mesh
 class Converter
 {
 public:
-	Converter(irr::scene::IMesh	*bspmesh , const std::string &outPath,const std::string& baseq3);
+	Converter(khbsp::CQ3LevelMesh	*bspmesh , const std::string &outPath,const std::string& baseq3);
 	~Converter();
 
 	void processMeshes(bool optimize);
@@ -58,7 +59,7 @@ private:
 	bool writeGeometry(const std::string &assetPath, const std::string &assetName) const;
 
 private:
-	irr::scene::IMesh					*_bspmesh;
+	khbsp::CQ3LevelMesh				*_bspmesh;
 	std::vector< Vertex >        _vertices;
 	std::vector< unsigned int >  _indices;
 	std::vector< Mesh * >        _meshes;

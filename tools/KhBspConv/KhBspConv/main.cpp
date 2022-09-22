@@ -2,6 +2,7 @@
 #include <irrlicht.h>
 #include "converter.h"
 #include <Windows.h>
+#include "CQ3LevelMesh.h"
 using namespace irr;
 
 IrrlichtDevice *device;
@@ -42,7 +43,10 @@ int main(int argc, char** argv)
 	char mappath[MAX_PATH];
 	sprintf(mappath, "%s\\maps\\%s.bsp", baseq3, mapname);
 	fs->addFolderFileArchive(baseq3);
-	scene::IQ3LevelMesh* const mesh = (scene::IQ3LevelMesh*) smgr->getMesh(mappath);
+	irr::scene::quake3::Q3LevelLoadParameter LoadParam;
+	auto mesh = new khbsp::CQ3LevelMesh(fs, smgr, LoadParam); //(scene::IQ3LevelMesh*) smgr->getMesh(mappath);
+	mesh->loadFile(fs->createAndOpenFile(mappath));
+	
 	std::string entity_xml;
 	irr::scene::quake3::tQ3EntityList &entityList = mesh->getEntityList();
 	for (int i = 0; i < entityList.size(); i++)
@@ -67,12 +71,22 @@ int main(int argc, char** argv)
 	}
 	char cf[MAX_PATH];
 	sprintf(cf,"%s\\", contentfolder);
-	auto geom = mesh->getMesh(0);
-	Converter c(geom, cf,baseq3);
+	Converter c(mesh, cf,baseq3);
 	c.processMeshes(false);
 
 	char assetpath[MAX_PATH];
-	sprintf(assetpath, "maps/%s/", mapname);
+	sprintf(assetpath, "maps\\%s\\", mapname);
 	c.writeModel(assetpath, mapname, entity_xml);
+
+
+	//copy lightmaps
+	printf("Copy lightmaps");
+	char lightmaps_dir[1024];
+	sprintf(lightmaps_dir, "%s\\maps\\%s\\lm_*", baseq3, mapname);
+	
+	char command[2048];
+	sprintf(command, "xcopy \"%s\" \"%s\\%s\" /i /y", lightmaps_dir, contentfolder, assetpath);
+	system(command);
+
 	return 0;
 }

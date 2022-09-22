@@ -49,7 +49,7 @@ inline void fwrite_le(const T* data, size_t count, FILE* f)
 	}
 }
 
-Converter::Converter(irr::scene::IMesh	*bspmesh, const std::string &outPath, const std::string& baseq3) :_bspmesh(bspmesh), _outPath(outPath), _baseq3(baseq3)
+Converter::Converter(khbsp::CQ3LevelMesh	*bspmesh, const std::string &outPath, const std::string& baseq3) :_bspmesh(bspmesh), _outPath(outPath), _baseq3(baseq3)
 {
 	
 }
@@ -153,14 +153,19 @@ void Converter::processMeshes(bool optimize)
 	_meshes.push_back(new Mesh());
 
 	int of = 0;
-	for (int j = 0; j < _bspmesh->getMeshBufferCount(); j++)
+	auto m1 = _bspmesh->getMesh(0);
+	for (int j = 0; j < m1->buffers.size(); j++)
 	{
-		auto iTriGroup = (irr::scene::SMeshBufferLightMap*)_bspmesh->getMeshBuffer(j);
+		auto iTriGroup = m1->buffers[j];
 		TriGroup* oTriGroup = new TriGroup();
+		auto lightmap_id = iTriGroup->lightmapID;
 
-		std::string name = iTriGroup->getMaterial().getTexture(0)->getName().getInternalName().c_str();
-		name = name.substr(strlen(_baseq3.c_str())+strlen("/textures/"));
+		std::string name = iTriGroup->texture;
+		name = name.substr(strlen("textures/"));
 		oTriGroup->matName = name;
+
+
+
 		oTriGroup->first = (unsigned int)_indices.size();
 		oTriGroup->count = (unsigned int)iTriGroup->Indices.size();
 		oTriGroup->vertRStart = (unsigned int)_vertices.size();
@@ -343,7 +348,7 @@ const char* mat_out_folder = "models/bsptextures/materials/";
 std::string getxmlMatPath(std::string matname, std::string outpath)
 {
 	std::string res = "materials/"+ matname;
-	res = res.substr(0, res.length() - 4) + "/mat.material.xml";
+	res = res+ "/mat.material.xml";
 	return res;
 
 }

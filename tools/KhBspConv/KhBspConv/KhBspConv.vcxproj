@@ -132,6 +132,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>Irrlicht.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(ProjectDir)\lib\irrlicht\lib\irrlicht.dll $(OutDir)\irrlicht.dll</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -151,12 +154,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="bsploder.cpp" />
     <ClCompile Include="converter.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="optimizer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="converter.h" />
+    <ClInclude Include="CQ3LevelMesh.h" />
     <ClInclude Include="optimizer.h" />
     <ClInclude Include="utMath.h" />
   </ItemGroup>
