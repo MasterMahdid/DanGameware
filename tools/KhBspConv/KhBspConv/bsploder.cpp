@@ -798,8 +798,7 @@ namespace khbsp
 						if (LoadParam.mergeShaderBuffer == 1)
 						{
 							// combine
-							//buffer = (KhMeshBuffer*)newmesh[item[g].index]->getMeshBuffer(item[g].index != E_Q3_MESH_FOG ? material : material2);
-							//TODO: implement merging
+							buffer = (KhMeshBuffer*)newmesh[item[g].index]->getMeshBuffer(Faces[i].textureID,Faces[i].lightmapID);
 						}
 
 						// create a seperate mesh buffer
@@ -807,6 +806,7 @@ namespace khbsp
 						{
 							buffer = new KhMeshBuffer();
 							buffer->texture = this->Textures[Faces[i].textureID].strName;
+							buffer->textureID = Faces[i].textureID;
 							buffer->lightmapID = Faces[i].lightmapID;
 							newmesh[item[g].index]->buffers.push_back(buffer);
 							
@@ -1198,6 +1198,7 @@ namespace khbsp
 			// create a temporary patch
 			Bezier.Patch = new KhMeshBuffer();
 			Bezier.Patch->texture = this->Textures[face->textureID].strName;
+			Bezier.Patch->textureID = face->textureID;
 			Bezier.Patch->lightmapID = face->lightmapID;
 			//Loop through the biquadratic patches
 			for (j = 0; j < biquadHeight; ++j)

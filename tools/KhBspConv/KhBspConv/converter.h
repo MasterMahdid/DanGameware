@@ -34,6 +34,7 @@ struct TriGroup
 	unsigned int  first, count;
 	unsigned int  vertRStart, vertREnd;
 	std::string   matName;
+	int lightmap_id;
 	std::vector<unsigned int> vertIndexes;
 };
 struct Mesh

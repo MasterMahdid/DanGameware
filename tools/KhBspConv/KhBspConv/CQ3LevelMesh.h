@@ -35,6 +35,7 @@ namespace khbsp
 	struct KhMeshBuffer
 	{
 		const char* texture;
+		s32 textureID;
 		s32 lightmapID;
 		core::array<irr::video::S3DVertex2TCoords> Vertices;
 		core::array<u16> Indices;
@@ -47,6 +48,15 @@ namespace khbsp
 	struct KhMesh
 	{
 		std::vector<KhMeshBuffer*> buffers;
+		KhMeshBuffer* getMeshBuffer(s32 texture_id, s32 lightmap_id)
+		{
+			for (const auto& b : buffers)
+			{
+				if (b->textureID == texture_id && b->lightmapID == lightmap_id)
+					return b;
+			}
+			return nullptr;
+		}
 	};
 	using namespace irr::scene;
 	class CQ3LevelMesh 

@@ -70,11 +70,9 @@ void mapLoad(const char* name)
 	char scene_path[1024];
 	sprintf(scene_path, "maps/%s/%s.scene.xml", name, name);
 
-	char lightmap_path[1024];
-	sprintf(lightmap_path, "maps/%s/lm_0000.tga", name, name);
+	
 
 	H3DRes skyBoxRes = h3dAddResource(H3DResTypes::SceneGraph, "models/skybox/skybox.scene.xml", 0);
-	H3DRes lightmapRes = h3dAddResource(H3DResTypes::Texture, lightmap_path, 0);
 	
 	fireparticle = h3dAddResource(H3DResTypes::SceneGraph, "particles/fire/fire.scene.xml", 0);
 	
@@ -98,15 +96,42 @@ void mapLoad(const char* name)
 
 	
 	
+	size_t sz2;
+	char* data = (char*)loadResourceData(scene_path, content_dir, sz2);
 	
+	auto chr = strstr(data, "lightmap_id=\"");
+	std::vector<std::string> lms;
+	while (chr != 0)
+	{
+		char num[3] = { 0 };
+		if (chr[14] >= '0' && chr[14] <= '9')//two digit
+		{
+			num[0] = chr[13];
+			num[1] = chr[14];
+		}
+		else
+		{
+			num[0] = '0';
+			num[1] = chr[13];
+		}
+		char lightmap_path[1024];
+		sprintf(lightmap_path, "maps/%s/lm_00%s.tga", name, num);
+		lms.push_back(lightmap_path);
+		chr = strstr(chr+14, "lightmap_id=\"");
+	}
 	
 	//5- setup
 	H3DNode env = h3dAddNodes(H3DRootNode, envRes);
 	h3dSetNodeTransform(env, 0, 0, 0, 0, 0, 0, 1, 1, 1);
 
 	int num = h3dFindNodes(env, "", H3DNodeTypes::Mesh);
+	//int num = lms.size();
 	for (size_t i = 0; i < num; i++)
 	{
+		char temp[100];
+		//sprintf(temp, "bspconv-%d", i);
+		//h3dFindNodes(env, temp, H3DNodeTypes::Mesh);
+		//auto node = h3dGetNodeFindResult(0);
 		auto node = h3dGetNodeFindResult(i);
 		auto mat = h3dGetNodeParamI(node, H3DMesh::MatResI);
 		auto matname = h3dGetResName(mat);
@@ -116,7 +141,7 @@ void mapLoad(const char* name)
 		if (data == nullptr)
 			continue;
 		
-		std::string addd = std::string("<Sampler name=\"lightMap\" map=\"")+std::string(lightmap_path)+std::string("\" /></Material>");
+		std::string addd = std::string("<Sampler name=\"lightMap\" map=\"")+ lms[i]+std::string("\" /></Material>");
 
 
 		auto str = strstr(data, "</Material>");
@@ -133,7 +158,7 @@ void mapLoad(const char* name)
 
 
 		char matname2[1024];
-		sprintf(matname2, "runtime/%s",matname);
+		sprintf(matname2, "%druntime/%s",i,matname);
 
 		auto mat2res = h3dAddResource(H3DResTypes::Material, matname2, 0);
 		
@@ -148,6 +173,7 @@ void mapLoad(const char* name)
 		
 
 	}
+	h3dutLoadResourcesFromDisk(content_dir);
 	// Add skybox
 	H3DNode sky = h3dAddNodes(H3DRootNode, skyBoxRes);
 	h3dSetNodeTransform(sky, 0, 0, 0, 0, 0, 0, 18000, 4000, 18000);

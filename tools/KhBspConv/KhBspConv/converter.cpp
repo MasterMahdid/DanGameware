@@ -165,6 +165,8 @@ void Converter::processMeshes(bool optimize)
 		oTriGroup->matName = name;
 
 
+		oTriGroup->lightmap_id = iTriGroup->lightmapID;
+
 
 		oTriGroup->first = (unsigned int)_indices.size();
 		oTriGroup->count = (unsigned int)iTriGroup->Indices.size();
@@ -372,12 +374,14 @@ bool Converter::writeModel(const std::string &assetPath, const std::string &asse
 	int len;
 	sprintf(buffer, "<Model name=\"%s\" geometry=\"%s%s.geo\">\n",assetName.c_str(),assetPath.c_str(),assetName.c_str());
 	fwrite(buffer, 1, strlen(buffer), f);
+	int ind = 0;
 	for (const auto& tg : _meshes[0]->triGroups)
 	{
 		auto mat_xml_local_path = getxmlMatPath(tg->matName, _outPath);
 		//TODO: remove bspconv below
-		sprintf(buffer, "<Mesh name=\"bspconv\" material=\"%s\" batchStart=\"%d\" batchCount=\"%d\" vertRStart=\"%d\" vertREnd=\"%d\"  />\n", mat_xml_local_path.c_str(), tg->first, tg->count, tg->vertRStart, tg->vertREnd);
+		sprintf(buffer, "<Mesh name=\"bspconv-%d\" lightmap_id=\"%d\" material=\"%s\" batchStart=\"%d\" batchCount=\"%d\" vertRStart=\"%d\" vertREnd=\"%d\"  />\n",ind,tg->lightmap_id, mat_xml_local_path.c_str(), tg->first, tg->count, tg->vertRStart, tg->vertREnd);
 		fwrite(buffer, 1, strlen(buffer), f);
+		ind++;
 	}
 	sprintf(buffer, "</Model>\n");
 	fwrite(buffer, 1, strlen(buffer), f);
