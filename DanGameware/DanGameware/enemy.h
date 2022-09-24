@@ -7,6 +7,8 @@ class Enemy : public GameObject
 private:
 	Hndl pawn;
 	H3DNode node;
+	Vector3d<f32> velocity;
+	float animTime;
 	float walkAnimTime;
 	float deathAnimTime;
 	float idle_walk_fade;
