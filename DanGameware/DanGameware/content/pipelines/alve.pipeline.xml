@@ -1,0 +1,38 @@
+<!-- High Dynamic Range (HDR) Forward Shading Pipeline -->
+<Pipeline>
+	<Setup>
+		<RenderTarget id="HDRBUF" depthBuf="true" numColBufs="1" format="RGBA16F" scale="1.0" maxSamples="16" />
+	</Setup>
+	
+	<CommandQueue>
+		<Stage id="Ambient" link="pipelines/globalSettings.material.xml">
+			<SwitchTarget target="HDRBUF" />
+			<ClearTarget depthBuf="true" colBuf0="true" />
+			
+			<DrawGeometry context="AMBIENT" class="~Translucent" />
+		</Stage>
+		
+		<Stage id="Lighting">
+			<DoForwardLightLoop class="~Translucent" />
+		</Stage>
+		
+		<Stage id="Translucent">
+			<DrawGeometry context="TRANSLUCENT" class="Translucent" order="BACK_TO_FRONT" />
+		</Stage>
+		
+		<!-- HDR post processing -->
+		<Stage id="BrightPass">
+			<SwitchTarget target="" />
+			<BindBuffer sampler="buf0" sourceRT="HDRBUF" bufIndex="0" />
+			<DrawQuad material="pipelines/postalve.material.xml" context="FINALPASS" />
+			<UnbindBuffers />
+		</Stage>
+		
+		
+		
+		<!-- Overlays -->
+		<Stage id="Overlays">
+			<DrawOverlays context="OVERLAY" />
+		</Stage>
+	</CommandQueue>
+</Pipeline>

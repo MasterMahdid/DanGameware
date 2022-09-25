@@ -40,8 +40,6 @@ H3DNode main_camera = 0;
 
 
 GLFWwindow* _winHandle;
-H3DRes _fontMatRes;
-H3DRes _panelMatRes;
 float prev_x = 0;
 float prev_y = 0;
 bool running = true;
@@ -198,13 +196,14 @@ void initGame(int winWidth, int winHeight)
 
 
 
-	_fontMatRes = h3dAddResource(H3DResTypes::Material, "overlays/font.material.xml", 0);
-	_panelMatRes = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
 	H3DRes pipeRes = h3dAddResource(H3DResTypes::Pipeline, "pipelines/alve.pipeline.xml", 0);
+	H3DRes model_shader = h3dAddResource(H3DResTypes::Shader, "shaders/model.shader", 0);
+	H3DRes model_shader2 = h3dAddResource(H3DResTypes::Shader, "shaders/model_org.shader", 0);
+	H3DRes model_shader3 = h3dAddResource(H3DResTypes::Shader, "shaders/model_org2.shader", 0);
+	H3DRes skybox_shader = h3dAddResource(H3DResTypes::Shader, "shaders/skybox.shader", 0);
+	H3DRes particle_shader = h3dAddResource(H3DResTypes::Shader, "shaders/particle.shader", 0);
 
-	const char* content_dir = getenv("ALVAHSHI_CONTENT");
-
-	h3dutLoadResourcesFromDisk(content_dir);
+	h3dutLoadResourcesFromDisk("./enginecontent/");
 
 
 	main_camera = h3dAddCameraNode(H3DRootNode, "Camera", pipeRes);
@@ -217,10 +216,6 @@ void initGame(int winWidth, int winHeight)
 }
 void gameLoop(float dt)
 {
-	if (edit_mode)
-	{
-		h3dShowFrameStats(_fontMatRes, _panelMatRes, 1);
-	}
 	unsigned int cnt = h3dFindNodes(H3DRootNode, "", H3DNodeTypes::Emitter);
 	for (unsigned int i = 0; i < cnt; ++i)
 		h3dUpdateEmitter(h3dGetNodeFindResult(i), dt);
