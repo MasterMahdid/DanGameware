@@ -49,7 +49,7 @@ float timescale = 1;
 bool edit_mode = false;
 bool fisrt_mosue = true;
 
-
+void dw_console_log(const char* fmt, ...);
 void windowCloseListener(GLFWwindow* win)
 {
 	running = false;
@@ -128,6 +128,23 @@ bool init()
 	ImGui_ImplGlfw_InitForOpenGL(_winHandle, true);
 	ImGui_ImplOpenGL3_Init();
 
+	ImVec4* colors = ImGui::GetStyle().Colors;
+	colors[ImGuiCol_WindowBg] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+	colors[ImGuiCol_FrameBg] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);
+	colors[ImGuiCol_CheckMark] = ImVec4(0.39f, 0.39f, 0.39f, 1.00f);
+	colors[ImGuiCol_Button] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);
+	colors[ImGuiCol_ResizeGrip] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);
+	colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.14f, 0.13f, 1.00f);
+
+
+	auto& st = ImGui::GetStyle();
+	st.WindowRounding = 3;
+	st.FrameRounding = 3;
+	st.FramePadding.x = 7;
+	st.FramePadding.y = 6;
+	
+
+
 	khsound::init_sound();
 
 
@@ -153,6 +170,18 @@ void detectMaterials()
 			matres = mat;
 			break;
 		}
+	}
+}
+void dumph3dMessages()
+{
+	int level;
+	float time;
+	const char* text = h3dGetMessage(&level, &time);
+
+	while (strlen(text)!=0)
+	{
+		dw_console_log(text);
+		text = h3dGetMessage(&level, &time);
 	}
 }
 void initGame(int winWidth, int winHeight)
@@ -185,7 +214,6 @@ void initGame(int winWidth, int winHeight)
 	h3dSetupCameraView(main_camera, 80.0f, (float)winWidth / winHeight, 1, 30000);
 	h3dResizePipelineBuffers(pipeRes, winWidth, winHeight);
 	
-	h3dutDumpMessages();
 }
 void gameLoop(float dt)
 {
@@ -298,10 +326,11 @@ int main(int argc, char** argv)
 
 		if (frames % 500 == 0)
 		{
-			printf("Physic time: avg=%.2fms (%d fps) current=%.2fms (%d fps)\n", (phys_time / frames) * 1000, (int)(frames / phys_time), phdt * 1000, (int)(1.0 / phdt));
+			dw_console_log("Physic time: avg=%.2fms (%d fps) current=%.2fms (%d fps)\n", (phys_time / frames) * 1000, (int)(frames / phys_time), phdt * 1000, (int)(1.0 / phdt));
 		}
 
 		gameRender();
+		dumph3dMessages();
 
 	}
 	ImGui_ImplOpenGL3_Shutdown();
@@ -370,23 +399,7 @@ void alve_editor_draw_material_controls()
 
 	ImGui::End();
 }
-void alve_draw_console()
-{
-	ImGui::Begin("console",0,ImGuiWindowFlags_::ImGuiWindowFlags_NoNav);
-	char buf[4096] = {};
-	if (ImGui::InputText("Input", buf, 4096))
-	{
-
-	}
-	if (ImGui::Button("Load Map"))
-	{
-		//mapLoad("awdwad");
-		//mapLoad("e1m1_jail");
-		mapLoad("finalook");
-
-	}
-	ImGui::End();
-}
+void khshowConsole();
 void imgui_frame()
 {
 	ImGui_ImplOpenGL3_NewFrame();
@@ -415,7 +428,7 @@ void imgui_frame()
 	{
 		//ImGui::ShowDemoWindow();
 		//alve_editor_draw_material_controls();
-		alve_draw_console();
+		khshowConsole();
 		bool select_closest_light = false;
 		if (dynamic_lights.size() > 0)
 		{

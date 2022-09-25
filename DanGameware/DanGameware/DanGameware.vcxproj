@@ -159,6 +159,7 @@
   <ItemGroup>
     <ClCompile Include="ai.cpp" />
     <ClCompile Include="collision.cpp" />
+    <ClCompile Include="console.cpp" />
     <ClCompile Include="dangameware.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="FPSCharacter.cpp" />
