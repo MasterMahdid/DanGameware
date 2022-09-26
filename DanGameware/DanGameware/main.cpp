@@ -275,6 +275,7 @@ int main(int argc, char** argv)
 	int frames = 0;
 	double last_t = t0;
 	double phys_time = 0;
+	debug_draw_init();
 	while (running)
 	{
 		//dt
