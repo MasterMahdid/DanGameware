@@ -25,6 +25,7 @@ extern "C" {
 #include <lauxlib.h>
 #include <lualib.h>
 }
+#include "debug_draw.h";
 
 Tween g_tween;
 
@@ -224,6 +225,7 @@ void gameRender()
 {
 	ImGui::Render();
 	h3dRender(main_camera);
+	debug_draw_frame(main_camera, false);
 	h3dFinalizeFrame();
 	h3dClearOverlays();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -401,7 +403,7 @@ void imgui_frame()
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-
+	debug_draw_imgui(main_camera);
 
 	if (glfwGetKey(_winHandle, GLFW_KEY_TAB) == GLFW_PRESS && allow_tab)
 	{

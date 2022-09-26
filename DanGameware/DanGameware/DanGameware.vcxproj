@@ -163,6 +163,7 @@ xcopy $(ProjectDir)content\* $(OutDir)\enginecontent /S /I /Y</Command>
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="console.cpp" />
     <ClCompile Include="dangameware.cpp" />
+    <ClCompile Include="debug_draw.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="FPSCharacter.cpp" />
     <ClCompile Include="Gameplay.cpp" />
@@ -186,6 +187,7 @@ xcopy $(ProjectDir)content\* $(OutDir)\enginecontent /S /I /Y</Command>
     <ClInclude Include="ai.h" />
     <ClInclude Include="collision.h" />
     <ClInclude Include="dangameware.h" />
+    <ClInclude Include="debug_draw.h" />
     <ClInclude Include="enemy.h" />
     <ClInclude Include="fsm.h" />
     <ClInclude Include="Gameplay.h" />
@@ -197,6 +199,7 @@ xcopy $(ProjectDir)content\* $(OutDir)\enginecontent /S /I /Y</Command>
     <ClInclude Include="SoundEngine.h" />
     <ClInclude Include="Steering.h" />
     <ClInclude Include="Tween.h" />
+    <ClInclude Include="utMath.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DanGameware.rc" />
