@@ -397,6 +397,34 @@ void alve_editor_draw_material_controls()
 
 	ImGui::End();
 }
+void imgui_stats_window()
+{
+	float frame_time = h3dGetStat(H3DStats::FrameTime, true);
+	float batch_count = h3dGetStat(H3DStats::BatchCount, true);
+	float tri_count = h3dGetStat(H3DStats::TriCount, true);
+	float light_count = h3dGetStat(H3DStats::LightPassCount, true);
+	float texturemem = h3dGetStat(H3DStats::TextureVMem, false);
+	float geometry_mem = h3dGetStat(H3DStats::GeometryVMem, false);
+	int frame_rate = 1000 / frame_time;
+
+
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+	ImVec2 window_pos, window_pos_pivot;
+	window_pos.x = 10;
+	window_pos.y = 10;
+	window_pos_pivot.x = 0;
+	window_pos_pivot.y = 0;
+	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+	window_flags |= ImGuiWindowFlags_NoMove;
+	ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+	bool pop = true;
+	ImGui::Begin("Stats", &pop, window_flags);
+	ImGui::Text("%d FPS (%d Batches,%d Lights)", frame_rate, (int)batch_count, (int)light_count);
+	ImGui::Text("%d Triangles",(int)tri_count);
+	ImGui::Text("%d MB Textures,%d MB Models", (int)texturemem, (int)geometry_mem);
+
+	ImGui::End();
+}
 void khshowConsole();
 void imgui_frame()
 {
@@ -405,6 +433,7 @@ void imgui_frame()
 	ImGui::NewFrame();
 
 	debug_draw_imgui(main_camera);
+	imgui_stats_window();
 
 	if (glfwGetKey(_winHandle, GLFW_KEY_TAB) == GLFW_PRESS && allow_tab)
 	{
