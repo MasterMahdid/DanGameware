@@ -159,18 +159,21 @@ void Converter::processMeshes(bool optimize)
 	auto m1 = _bspmesh->getMesh(0);
 	for (const auto& m : m1->buffers)
 	{
+		m->modelNum = 0;
 		allbuf.push_back(m);
 	}
 	int ind = 1;
 	while (true)
 	{
-		auto m = _bspmesh->getBrushEntityMesh(ind++);
+		auto m = _bspmesh->getBrushEntityMesh(ind);
 		if (m == nullptr)
 			break;
 		for (const auto& mm : m->buffers)
 		{
 			allbuf.push_back(mm);
+			mm->modelNum = ind;
 		}
+		ind++;
 	}
 	for (int j = 0; j < allbuf.size(); j++)
 	{
@@ -182,6 +185,7 @@ void Converter::processMeshes(bool optimize)
 		name = name.substr(strlen("textures/"));
 		oTriGroup->matName = name;
 
+		oTriGroup->modelNum = iTriGroup->modelNum;
 
 		oTriGroup->lightmap_id = iTriGroup->lightmapID;
 
@@ -397,7 +401,7 @@ bool Converter::writeModel(const std::string &assetPath, const std::string &asse
 	{
 		auto mat_xml_local_path = getxmlMatPath(tg->matName, _outPath);
 		//TODO: remove bspconv below
-		sprintf(buffer, "<Mesh name=\"bspconv-%d\" lightmap_id=\"%d\" material=\"%s\" batchStart=\"%d\" batchCount=\"%d\" vertRStart=\"%d\" vertREnd=\"%d\"  />\n",ind,tg->lightmap_id, mat_xml_local_path.c_str(), tg->first, tg->count, tg->vertRStart, tg->vertREnd);
+		sprintf(buffer, "<Mesh name=\"bspconv-%d\" mpdel=\"%d\"lightmap_id=\"%d\" material=\"%s\" batchStart=\"%d\" batchCount=\"%d\" vertRStart=\"%d\" vertREnd=\"%d\"  />\n", ind,tg->modelNum ,tg->lightmap_id, mat_xml_local_path.c_str(), tg->first, tg->count, tg->vertRStart, tg->vertREnd);
 		fwrite(buffer, 1, strlen(buffer), f);
 		ind++;
 	}

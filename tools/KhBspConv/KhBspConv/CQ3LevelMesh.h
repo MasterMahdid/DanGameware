@@ -39,6 +39,7 @@ namespace khbsp
 		s32 lightmapID;
 		core::array<irr::video::S3DVertex2TCoords> Vertices;
 		core::array<u16> Indices;
+		int modelNum;
 		KhMeshBuffer()
 		{
 			texture = nullptr;

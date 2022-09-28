@@ -35,6 +35,7 @@ struct TriGroup
 	unsigned int  vertRStart, vertREnd;
 	std::string   matName;
 	int lightmap_id;
+	int modelNum;
 	std::vector<unsigned int> vertIndexes;
 };
 struct Mesh
