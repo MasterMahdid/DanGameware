@@ -401,7 +401,7 @@ bool Converter::writeModel(const std::string &assetPath, const std::string &asse
 	{
 		auto mat_xml_local_path = getxmlMatPath(tg->matName, _outPath);
 		//TODO: remove bspconv below
-		sprintf(buffer, "<Mesh name=\"bspconv-%d\" mpdel=\"%d\"lightmap_id=\"%d\" material=\"%s\" batchStart=\"%d\" batchCount=\"%d\" vertRStart=\"%d\" vertREnd=\"%d\"  />\n", ind,tg->modelNum ,tg->lightmap_id, mat_xml_local_path.c_str(), tg->first, tg->count, tg->vertRStart, tg->vertREnd);
+		sprintf(buffer, "<Mesh name=\"bspconv-%d\" model=\"%d\"lightmap_id=\"%d\" material=\"%s\" batchStart=\"%d\" batchCount=\"%d\" vertRStart=\"%d\" vertREnd=\"%d\"  />\n", ind,tg->modelNum ,tg->lightmap_id, mat_xml_local_path.c_str(), tg->first, tg->count, tg->vertRStart, tg->vertREnd);
 		fwrite(buffer, 1, strlen(buffer), f);
 		ind++;
 	}
