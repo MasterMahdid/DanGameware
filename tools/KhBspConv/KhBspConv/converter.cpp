@@ -153,10 +153,28 @@ void Converter::processMeshes(bool optimize)
 	_meshes.push_back(new Mesh());
 
 	int of = 0;
+
+	std::vector<khbsp::KhMeshBuffer*> allbuf;
+
 	auto m1 = _bspmesh->getMesh(0);
-	for (int j = 0; j < m1->buffers.size(); j++)
+	for (const auto& m : m1->buffers)
 	{
-		auto iTriGroup = m1->buffers[j];
+		allbuf.push_back(m);
+	}
+	int ind = 1;
+	while (true)
+	{
+		auto m = _bspmesh->getBrushEntityMesh(ind++);
+		if (m == nullptr)
+			break;
+		for (const auto& mm : m->buffers)
+		{
+			allbuf.push_back(mm);
+		}
+	}
+	for (int j = 0; j < allbuf.size(); j++)
+	{
+		auto iTriGroup = allbuf[j];
 		TriGroup* oTriGroup = new TriGroup();
 		auto lightmap_id = iTriGroup->lightmapID;
 

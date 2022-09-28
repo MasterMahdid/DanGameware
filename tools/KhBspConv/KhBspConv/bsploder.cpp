@@ -918,11 +918,11 @@ namespace khbsp
 				BrushEntities[i] = tmp[0];
 
 				// We only care about the main geometry here
-				for (j = 1; j < E_Q3_MESH_SIZE; j++)
+				/*for (j = 1; j < E_Q3_MESH_SIZE; j++)
 				{
 					delete tmp[j];
 				}
-				delete[] tmp;
+				delete[] tmp;*/
 			}
 
 			if (LoadParam.verbose > 0)
