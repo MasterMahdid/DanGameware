@@ -298,7 +298,27 @@ namespace khbsp
 		*/
 		void CQ3LevelMesh::loadPlanes(tBSPLump* l, io::IReadFile* file)
 		{
-			// ignore
+			NumPlanes = l->length / sizeof(tBSPPlane);
+			if (!NumPlanes)
+				return;
+			Planes = new tBSPPlane[NumPlanes];
+
+			file->seek(l->offset);
+			file->read(Planes, l->length);
+
+			if (LoadParam.swapHeader)
+			{
+				for (s32 i = 0; i < NumPlanes; i++)
+				{
+					Planes[i].d = byteswap(Planes[i].d);
+					Planes[i].vNormal[0] = byteswap(Planes[i].vNormal[0]);
+					Planes[i].vNormal[1] = byteswap(Planes[i].vNormal[1]);
+					Planes[i].vNormal[2] = byteswap(Planes[i].vNormal[2]);
+
+				}
+			}
+
+
 		}
 
 
@@ -428,14 +448,45 @@ namespace khbsp
 		*/
 		void CQ3LevelMesh::loadBrushes(tBSPLump* l, io::IReadFile* file)
 		{
-			// ignore
+			NumBrushes = l->length / sizeof(tBSPBrush);
+			if (!NumBrushes)
+				return;
+			Brushes = new tBSPBrush[NumBrushes];
+
+			file->seek(l->offset);
+			file->read(Brushes, l->length);
+
+			if (LoadParam.swapHeader)
+			{
+				for (s32 i = 0; i < NumBrushes; i++)
+				{
+					Brushes[i].brushSide = byteswap(Brushes[i].brushSide);
+					Brushes[i].numOfBrushSides = byteswap(Brushes[i].numOfBrushSides);
+					Brushes[i].textureID = byteswap(Brushes[i].textureID);
+				}
+			}
 		}
 
 		/*!
 		*/
 		void CQ3LevelMesh::loadBrushSides(tBSPLump* l, io::IReadFile* file)
 		{
-			// ignore
+			numBrushSides = l->length / sizeof(tBSPBrushSide);
+			if (!numBrushSides)
+				return;
+			BrushSides = new tBSPBrushSide[numBrushSides];
+
+			file->seek(l->offset);
+			file->read(BrushSides, l->length);
+
+			if (LoadParam.swapHeader)
+			{
+				for (s32 i = 0; i < numBrushSides; i++)
+				{
+					BrushSides[i].plane = byteswap(BrushSides[i].plane);
+					BrushSides[i].textureID= byteswap(BrushSides[i].textureID);
+				}
+			}
 		}
 
 		/*!

@@ -373,6 +373,9 @@ namespace khbsp
 		tBSPBrush* Brushes;
 		s32 NumBrushes;
 
+		tBSPBrushSide* BrushSides;
+		s32 numBrushSides;
+
 		KhMesh** BrushEntities;
 
 		KhMesh* Mesh[quake3::E_Q3_MESH_SIZE];
