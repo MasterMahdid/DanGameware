@@ -155,6 +155,8 @@ void getTrianglesFromOctree(SOctreeNode* node, s32& trianglesWritten,s32 maximum
 {
 	if (!box.intersectsWithBox(node->box))
 		return;
+	if (trianglesWritten == maximumSize)
+		return;
 
 	const u32 cnt = node->triangle_size;
 
