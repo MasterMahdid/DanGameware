@@ -280,7 +280,6 @@ std::vector<H3DNode> dynamic_lights;
 int selected_light_idx = 0;
 bool allow_tab=true;
 
-gentity_t g_entities = nullptr;
 int maadwawdin(void) {
 	char buff[256];
 	int error;
@@ -340,7 +339,6 @@ int main(int argc, char** argv)
 		if(game_pause==false)
 			gameupdate(dt);
 		gameRender();
-		dumph3dMessages();
 
 	}
 	ImGui_ImplOpenGL3_Shutdown();
@@ -444,7 +442,8 @@ void imgui_frame()
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-	debug_draw_imgui(main_camera);
+	//debug_draw_imgui(main_camera);
+
 	imgui_stats_window();
 
 	if (glfwGetKey(_winHandle, GLFW_KEY_TAB) == GLFW_PRESS && allow_tab)
