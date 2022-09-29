@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>
+#include <thread>
 
 #include "Horde3DUtils.h"
 #define WIN32_LEAN_AND_MEAN
@@ -38,6 +39,8 @@ Tween g_tween;
 #define V_SYNC (1)
 
 H3DNode main_camera = 0;
+gentity_t g_entities = nullptr;
+bool game_pause = false;
 
 
 GLFWwindow* _winHandle;
@@ -54,7 +57,14 @@ void windowCloseListener(GLFWwindow* win)
 	running = false;
 }
 
-void keyPressListener(GLFWwindow* win, int key, int scancode, int action, int mods) {}
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (key == GLFW_KEY_P && action == GLFW_PRESS)
+	{
+		dw_console_log("pressed P");
+		game_pause = !game_pause;
+	}
+}
 void mouseMoveListener(GLFWwindow* win, double x, double y)
 {
 	if (edit_mode)
@@ -110,7 +120,7 @@ bool init()
 	else
 		glfwSwapInterval(0);
 	glfwSetWindowCloseCallback(_winHandle, windowCloseListener);
-	glfwSetKeyCallback(_winHandle, keyPressListener);
+	glfwSetKeyCallback(_winHandle, key_callback);
 	glfwSetCursorPosCallback(_winHandle, mouseMoveListener);
 	glfwSetMouseButtonCallback(_winHandle, mouse_button_callback);
 	glfwSetInputMode(_winHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -215,19 +225,52 @@ void initGame(int winWidth, int winHeight)
 	h3dResizePipelineBuffers(pipeRes, winWidth, winHeight);
 	
 }
-void gameLoop(float dt)
+void updateEmitters(float dt)
 {
 	unsigned int cnt = h3dFindNodes(H3DRootNode, "", H3DNodeTypes::Emitter);
 	for (unsigned int i = 0; i < cnt; ++i)
 		h3dUpdateEmitter(h3dGetNodeFindResult(i), dt);
 }
+void gameupdate(float dt)
+{
+	g_input.capture(_winHandle);
+	//ai
+	if (g_entities != nullptr)
+	{
+		update_ents(g_entities, 2, dt);
+	}
+	//physic update
+	commitGameObjectListChanges();
+	for (const auto& go : gameObjects_array)
+	{
+		go->PhysicUpdate(dt);
+	}
+	double phdt;
+
+	g_phyis.update(dt);
+	for (const auto& go : gameObjects_array)
+	{
+		go->Update(dt);
+	}
+	g_tween.update(dt);
+	updateEmitters(dt);
+
+	//phdt = glfwGetTime() - t;
+	//phys_time += phdt;
+	//if (frames % 500 == 0)
+		//dw_console_log("Physic time: avg=%.2fms (%d fps) current=%.2fms (%d fps)\n", (phys_time / frames) * 1000, (int)(frames / phys_time), phdt * 1000, (int)(1.0 / phdt));
+	dumph3dMessages();
+}
 void gameRender()
 {
+	//if (game_pause == false)
+	{
+		h3dRender(main_camera);
+		debug_draw_frame(main_camera, false);
+		h3dFinalizeFrame();
+		h3dClearOverlays();
+	}
 	ImGui::Render();
-	h3dRender(main_camera);
-	debug_draw_frame(main_camera, false);
-	h3dFinalizeFrame();
-	h3dClearOverlays();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwMakeContextCurrent(_winHandle);
 	glfwSwapBuffers(_winHandle);
@@ -270,63 +313,32 @@ int main(int argc, char** argv)
 	//maadwawdin();
 	init();
 	initGame(WINDOW_WIDTH, WINDOW_HEIGHT);
-	mapLoad("finalook");
-	double t0 = glfwGetTime();
-	int frames = 0;
-	double last_t = t0;
-	double phys_time = 0;
 	debug_draw_init();
+
+	//std::thread([](){
+		//mapLoad("esatwall");
+	//}).join();
+	
+	mapLoad("esatwall");
+	double last_t = glfwGetTime();;
 	while (running)
 	{
 		//dt
-		frames++;
 		double t = glfwGetTime();
 		float dt = t - last_t;
 		last_t = t;
 		//input
-		g_input.drx = 0;
 		g_input.dry = 0;
+		g_input.drx = 0;
 		glfwPollEvents();
-		g_input.capture(_winHandle);
+		
 		//imgui
 		imgui_frame();
-		//ai
-		if (g_entities != nullptr)
-		{
-			update_ents(g_entities, 2, dt);
-		}
+
+		if (dt > 0.1f) dt = 0.1f;
 		
-		//physic update
-		commitGameObjectListChanges();
-		for (const auto& go : gameObjects_array)
-		{
-			go->PhysicUpdate(dt);
-		}
-		double phdt;
-		double tt = glfwGetTime();
-
-			
-		auto fixed_dt = dt;
-		if (dt > 0.1f) fixed_dt = 0.1f;
-		g_phyis.update(fixed_dt);
-		for (const auto& go : gameObjects_array)
-		{
-			go->Update(fixed_dt);
-				
-		}
-
-
-		g_tween.update(fixed_dt);
-		gameLoop(fixed_dt);
-
-		phdt = glfwGetTime() - tt;
-		phys_time += phdt;
-
-		if (frames % 500 == 0)
-		{
-			dw_console_log("Physic time: avg=%.2fms (%d fps) current=%.2fms (%d fps)\n", (phys_time / frames) * 1000, (int)(frames / phys_time), phdt * 1000, (int)(1.0 / phdt));
-		}
-
+		if(game_pause==false)
+			gameupdate(dt);
 		gameRender();
 		dumph3dMessages();
 
