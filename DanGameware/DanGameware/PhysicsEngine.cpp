@@ -445,3 +445,32 @@ float* physicEngine::createLevelPhysTriData(H3DRes level_mesh_res, int& tri_coun
 	}
 	return result_data;
 }
+
+bool physicEngine::trace(Vector3df from, Vector3df to,Vector3df& hit)
+{
+	Triangle tris[1024];
+	s32 sz;
+	Aabbox3d aabb(from);
+	aabb.addInternalPoint(to);
+	getTriangles(tris, 1024, sz, aabb, nullptr);
+	Vector3df hitpoint;
+
+	f32 min_dist;
+	bool first = true;
+	Triangle* min_dist_tri = nullptr;
+	for (int i = 0; i < sz; i++)
+	{
+		if (colTriLine(&tris[i], &from, &to, hitpoint))
+		{
+			f32 dist = (hitpoint - from).getLengthSQ();
+			if (first || dist < min_dist)
+			{
+				min_dist_tri = &tris[i];
+				min_dist = dist;
+				hit = hitpoint;
+				first = false;
+			}
+		}
+	}
+	return min_dist_tri != nullptr;
+}

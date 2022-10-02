@@ -82,3 +82,52 @@ bool ColShpereCapsule(Vector3df sphere_center, f32 sphere_raidus, Vector3df caps
 	}
 	return col;
 }
+
+
+
+bool IntersectSegmentTriangle(Vector3df p, Vector3df q, Vector3df a, Vector3df b, Vector3df c,	Vector3df& hit)
+{
+	float u, v, w, t;
+	Vector3df ab = b - a;
+	Vector3df ac = c - a;
+	Vector3df qp = p - q;
+	// Compute triangle normal. Can be precalculated or cached if
+	// intersecting multiple segments against the same triangle
+	Vector3df n = ab.cross(ac);
+	// Compute denominator d. If d <= 0, segment is parallel to or points
+	// away from triangle, so exit early
+	float d = qp.dot(n);
+	if (d <= 0.0f) return 0;
+	// Compute intersection t value of pq with plane of triangle. A ray
+	// intersects iff 0 <= t. Segment intersects iff 0 <= t <= 1. Delay
+	// dividing by d until intersection has been found to pierce triangle
+	Vector3df ap = p - a;
+	t = ap.dot(n);
+	if (t < 0.0f) return 0;
+	if (t > d) return 0;
+	// For segment; exclude this code line for a ray test
+	// Compute barycentric coordinate components and test if within bounds
+	Vector3df e = qp.cross(ap);
+	v = ac.dot(e);
+	if (v < 0.0f || v > d) return 0;
+	w = -ab.dot(e);
+	if (w < 0.0f || v + w > d) return 0;
+	// Segment/ray intersects triangle. Perform delayed division and
+	// compute the last barycentric coordinate component
+	float ood = 1.0f / d;
+	t *= ood;
+	v *= ood;
+	w *= ood;
+	u = 1.0f - v - w;
+	hit = a + (b - a)*v + (c - a)*w;
+	return 1;
+}
+
+bool colTriLine(Triangle* tri, Vector3df* from, Vector3df* to, Vector3df& out_res)
+{
+	float t, u, v, w;
+	bool col = IntersectSegmentTriangle(*from, *to, tri->p1, tri->p2, tri->p3, out_res);
+	return col;
+
+
+}
