@@ -41,7 +41,7 @@ Tween g_tween;
 H3DNode main_camera = 0;
 gentity_t g_entities = nullptr;
 bool game_pause = false;
-
+H3DRes background_mat;
 
 GLFWwindow* _winHandle;
 float prev_x = 0;
@@ -215,7 +215,7 @@ void initGame(int winWidth, int winHeight)
 	H3DRes model_shader3 = h3dAddResource(H3DResTypes::Shader, "shaders/model_org2.shader", 0);
 	H3DRes skybox_shader = h3dAddResource(H3DResTypes::Shader, "shaders/skybox.shader", 0);
 	H3DRes particle_shader = h3dAddResource(H3DResTypes::Shader, "shaders/particle.shader", 0);
-
+	background_mat = h3dAddResource(H3DResTypes::Material, "textures/backgroundfill.material.xml", 0);
 	h3dutLoadResourcesFromDisk("./enginecontent/");
 
 
@@ -268,10 +268,11 @@ void gameRender()
 {
 	//if (game_pause == false)
 	{
+		
 		h3dRender(main_camera);
-		debug_draw_frame(main_camera, false);
 		h3dFinalizeFrame();
 		h3dClearOverlays();
+		debug_draw_frame(main_camera, false);
 	}
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -331,15 +332,28 @@ void mapLoadUpdate()
 	glClearColor(ldupdate_cnt * 0.02, 0, 0, 255);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
-	//float points[] = { 0,0,0,1,     1,0,1,1,           1,0.562,1,0,      0,0.562,0,0 };
-	//h3dShowOverlays(points, 4, 1, 1, 1, 1, background_mat, 0);
+	const float ww = (float)h3dGetNodeParamI(main_camera, H3DCamera::ViewportWidthI) /
+		(float)h3dGetNodeParamI(main_camera, H3DCamera::ViewportHeightI);
+
+	// Show logo
+	const float ovLogo[] = {
+		0, 0, 0, 1,
+		0, 1, 0, 0,
+		ww, 1, 1, 0,
+		ww, 0, 1, 1
+	};
+	h3dShowOverlays(ovLogo, 4, 1, 1, 1, 1, background_mat, 0);
+	h3dRender(main_camera);
+	h3dFinalizeFrame();
+	h3dClearOverlays();
+
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwMakeContextCurrent(_winHandle);
 	glfwSwapBuffers(_winHandle);
 }
 void main_load_map()
 {
-	mapLoad("finalook", &mapLoadUpdate);
+	mapLoad("esatwall", &mapLoadUpdate);
 }
 int main(int argc, char** argv);
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
@@ -353,7 +367,7 @@ int main(int argc, char** argv)
 	initGame(WINDOW_WIDTH, WINDOW_HEIGHT);
 	debug_draw_init();
 	
-	mapLoad("finalook", &mapLoadUpdate);
+	main_load_map();
 	double last_t = glfwGetTime();
 	while (running)
 	{
