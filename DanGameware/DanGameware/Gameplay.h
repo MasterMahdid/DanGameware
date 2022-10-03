@@ -22,9 +22,13 @@ struct playerInput
 class GameObject
 {
 private:
+	f32 x, y, z, pan, tilt, roll;
+	
 public:
 	virtual void PhysicUpdate(float dt){};//before physics
 	virtual void Update(float dt) {};//before render
+	virtual void Think() {};
+	virtual void Touch() {};
 };
 
 class FPSCharacter : public GameObject
