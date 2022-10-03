@@ -3,6 +3,7 @@
 #include "khmath.h"
 #include "enemy.h"
 #include "ai.h"
+#include "debug_draw.h"
 H3DRes enemy_res,enemy_anim_run_res;
 extern H3DNode main_camera;
 extern gentity_t g_entities;
@@ -41,12 +42,55 @@ void Enemy::PhysicUpdate(float dt)
 
 void Enemy::Update(float dt)
 {
+	float* mat = new float[16];
+	h3dGetNodeTransMats(node, NULL, (const float**)&mat);
+	dd_axes(mat, 0);
+
+	float PI = std::atan(1) * 4;
+
+
+	{
+		float minx, miny, minz, maxx, maxy, maxz;
+		h3dGetNodeAABB(node, &minx, &miny, &minz, &maxx, &maxy, &maxz);
+		dd_aabb(Vector3df(minx, miny, minz), Vector3df(maxx, maxy, maxz), Vector3df(1, 0, 1));
+	}
+	{
+		float x, y, z,ryy;
+		h3dGetNodeTransform(node, &x, &y, &z, nullptr, &ryy, nullptr, nullptr, nullptr, nullptr);
+		float rys[2] = { ryy + 90,ryy-90 };
+		for(float ry : rys)
+		{
+			float rad = ry / 180.0f * PI;
+			Vector3df camv(x, y + 32, z);
+			auto to = camv + Vector3df(sinf(rad) * 200, 0, cosf(rad) * 200);
+
+			Vector3df hit;
+			bool res = g_phyis.trace(camv, to, hit);
+			if (res)
+			{
+				dd_sphere(hit, 5, Vector3df(1, 0, 0));
+				dd_line(hit, camv, Vector3df(1, 1, 0), 0);
+
+			}
+			else
+			{
+				dd_line(to, camv, Vector3df(1, 1, 0), 0);
+				dd_point(to, Vector3df(1, 1, 0), 10);
+
+			}
+		}
+		
+
+	}
+
+
 	auto tr = g_phyis.getTransform(pawn);
 	auto y = tr.y-25;
 	float sx;
 	h3dGetNodeTransform(node, NULL, NULL, NULL,NULL, NULL, NULL, &sx, NULL, NULL);
+	if (iszero(velocity.getLength()))
+		return;
 	
-	float PI = std::atan(1) * 4;
 	float ry = atan2(velocity.x,velocity.z)/ PI*180;
 	h3dSetNodeTransform(node, tr.x, y, tr.z, 0, ry, 0, sx, sx, sx);
 	float animspeed = .4* this->velocity.getLength();

@@ -3,6 +3,7 @@
 #include "khmath.h"
 #include "SoundEngine.h"
 #include "ai.h"
+#include "debug_draw.h"
 extern gentity_t g_entities;
 namespace fpscharacter_internal
 {
@@ -33,6 +34,17 @@ FPSCharacter::FPSCharacter(H3DNode cam)
 	walk_tween.callFuncPeriodic(2, 0, [](float x) {cam_y_ofset2 = x; }, 0.5, EASING_FUNCTION::SineEaseOut, 26,0,0,true);
 	walk_tween.callFuncPeriodic(-0.4, +0.4, [](float x) {cam_rz = x; }, 0.4, EASING_FUNCTION::SineEaseOut, 26, 0, 0, true);
 	g_entities[0].pawn = pawn;
+
+	auto light = h3dAddLightNode(cam, "Light1", 0, "LIGHTING", "SHADOWMAP");
+	h3dSetNodeTransform(light, 0, 0, 0, 0, 0, 0, 1, 1, 1);
+	h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
+	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, 300);
+	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0,3);
+	h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 0);
+	h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, 0.003f);
+	h3dSetNodeParamF(light, H3DLight::ColorF3, 0, 1);
+	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, 0.75);
+	h3dSetNodeParamF(light, H3DLight::ColorF3, 2,0.50);
 }
 FPSCharacter::~FPSCharacter()
 {
@@ -90,7 +102,7 @@ void FPSCharacter::PhysicUpdate(float dt)
 	{
 		falling_time += dt;
 	}
-	if ((tr.grounded)&&g_input.jumpPressed && allow_jump)
+	if ((tr.grounded || true)&&g_input.jumpPressed && allow_jump)
 	{	
 		g_phyis.pawnJump(pawn, 270);
 		allow_jump = false;
