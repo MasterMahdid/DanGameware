@@ -2,7 +2,9 @@
 #include <fstream>
 #include <stdlib.h>
 #include <fstream>
+#include <thread>
 #include <Horde3D.h>
+#include <functional>
 #include "Horde3DUtils.h"
 #include "MapManager.h"
 #include "PhysicsEngine.h"
@@ -11,6 +13,7 @@
 #include "SoundEngine.h"
 #include "enemy.h"
 #include "ai.h"
+#include <GLFW/glfw3.h>
 
 
 extern physicEngine g_phyis;
@@ -18,6 +21,8 @@ extern std::vector<GameObject*> gameObjects_array;
 extern H3DNode main_camera;
 extern std::vector<H3DNode> dynamic_lights;
 extern gentity_t g_entities;
+H3DRes envRes, level_mesh_res;
+std::vector<std::string> lms;
 int add_light_from_map(const char* filename);
 int add_player_from_map(const char* filename);
 void removeAll()
@@ -39,6 +44,7 @@ void* loadResourceData(const char* name, const char* content_dir, size_t& out_si
 	inf.open(path, std::ios::binary);
 	if (inf.good() == false)
 	{
+		out_size = 0;
 		return nullptr;
 	}
 	inf.seekg(0, std::ios::end);
@@ -49,58 +55,58 @@ void* loadResourceData(const char* name, const char* content_dir, size_t& out_si
 	inf.close();
 	return ret;
 }
-void mapLoad(const char* name)
+void dw_console_log(const char* fmt, ...);
+void loadResourcesFromDisk(const char *contentDir,std::function<void()> update)
+{
+	int res = h3dQueryUnloadedResource(0);
+	double disktime = 0, h3dtime = 0;
+	double t0 = glfwGetTime();
+	while (res != 0)
+	{
+		auto resname = h3dGetResName(res);
+		size_t sz;
+		double t1 = glfwGetTime();
+		char* data = (char*)loadResourceData(resname, contentDir, sz);
+		double t2 = glfwGetTime();
+
+		h3dLoadResource(res, data, sz);
+		double t3 = glfwGetTime();
+		update();
+		disktime += (t2 - t1);
+		h3dtime += (t3 - t2);
+		res = h3dQueryUnloadedResource(0);
+	}
+	double totaltime = glfwGetTime() - t0;
+	dw_console_log("load time, disk=%0.2f         h3d=%0.2f           total=%0.2f", disktime, h3dtime, totaltime);
+
+}
+void mapPreload(const char* name, std::function<void()> update)
 {
 	const char* baseq3 = getenv("ALVAHSHI_BASEQ3");
 	const char* content_dir = getenv("ALVAHSHI_CONTENT");
-	//1- unload the previous map
-	for (const auto& go : gameObjects_array)
-	{
-		delete go;
-	}
-	gameObjects_array.clear();
-	
-	//removeAll();
-	
 	
 	//2-load the new map
 	char geo_path[1024];
-	sprintf(geo_path,"maps/%s/%s.geo", name, name);
+	sprintf(geo_path, "maps/%s/%s.geo", name, name);
 
 	char scene_path[1024];
 	sprintf(scene_path, "maps/%s/%s.scene.xml", name, name);
 
-	
-
-	H3DRes skyBoxRes = h3dAddResource(H3DResTypes::SceneGraph, "models/skybox/skybox.scene.xml", 0);
-	
-	fireparticle = h3dAddResource(H3DResTypes::SceneGraph, "particles/fire/fire.scene.xml", 0);
-	
-	auto level_mesh_res = h3dAddResource(H3DResTypes::Geometry, geo_path, 0);
-	H3DRes envRes = h3dAddResource(H3DResTypes::SceneGraph, scene_path, 0);
+	level_mesh_res = h3dAddResource(H3DResTypes::Geometry, geo_path, 0);
+	envRes = h3dAddResource(H3DResTypes::SceneGraph, scene_path, 0);
 
 	//TODO unload lightmaps
-	//H3DRes lmres = h3dAddResource(H3DResTypes::Texture, "models/esatwall_light/lm_0000.tga", 0);
-	//H3DRes lmres2 = h3dAddResource(H3DResTypes::Texture, "models/esatwall_light/lm_0000.tga", 0);
-	//h3dUnloadResource(lmres);
-	//h3dUnloadResource(lmres2);
 	h3dUnloadResource(level_mesh_res);
 	h3dUnloadResource(envRes);
 	//3- load entities
 
-
 	WeaponAxe::initRes();
 	Enemy::add_res();
-	//4-load resources from disk
-	h3dutLoadResourcesFromDisk(content_dir);
 
-	
-	
 	size_t sz2;
 	char* data = (char*)loadResourceData(scene_path, content_dir, sz2);
-	
+	lms.clear();
 	auto chr = strstr(data, "lightmap_id=\"");
-	std::vector<std::string> lms;
 	while (chr != 0)
 	{
 		char num[3] = { 0 };
@@ -117,9 +123,29 @@ void mapLoad(const char* name)
 		char lightmap_path[1024];
 		sprintf(lightmap_path, "maps/%s/lm_00%s.tga", name, num);
 		lms.push_back(lightmap_path);
-		chr = strstr(chr+14, "lightmap_id=\"");
+		h3dAddResource(H3DResTypes::Texture, lightmap_path, 0);
+		chr = strstr(chr + 14, "lightmap_id=\"");
 	}
-	
+	//4-load resources from disk
+	loadResourcesFromDisk(content_dir, update);
+	khsound::load_sounds();
+
+}
+
+void mapLoad(const char* name, std::function<void()> update)
+{
+	update();
+	mapPreload(name, update);
+	const char* baseq3 = getenv("ALVAHSHI_BASEQ3");
+	const char* content_dir = getenv("ALVAHSHI_CONTENT");
+	//1- unload the previous map
+	for (const auto& go : gameObjects_array)
+	{
+		delete go;
+	}
+	gameObjects_array.clear();
+
+	//removeAll();
 	//5- setup
 	H3DNode env = h3dAddNodes(H3DRootNode, envRes);
 	h3dSetNodeTransform(env, 0, 0, 0, 0, 0, 0, 1, 1, 1);
@@ -173,11 +199,10 @@ void mapLoad(const char* name)
 		
 
 	}
-	h3dutLoadResourcesFromDisk(content_dir);
 	// Add skybox
-	H3DNode sky = h3dAddNodes(H3DRootNode, skyBoxRes);
-	h3dSetNodeTransform(sky, 0, 0, 0, 0, 0, 0, 18000, 4000, 18000);
-	h3dSetNodeFlags(sky, H3DNodeFlags::NoCastShadow, true);
+	//H3DNode sky = h3dAddNodes(H3DRootNode, skyBoxRes);
+	//h3dSetNodeTransform(sky, 0, 0, 0, 0, 0, 0, 18000, 4000, 18000);
+	//h3dSetNodeFlags(sky, H3DNodeFlags::NoCastShadow, true);
 	int tri_count = -1;
 	auto tri_data = g_phyis.createLevelPhysTriData(level_mesh_res, tri_count);
 	g_phyis.loadLevel(tri_data, tri_count);
@@ -219,7 +244,7 @@ void mapLoad(const char* name)
 	add_light_from_map(mapfn);
 	add_player_from_map(mapfn);
 
-	khsound::load_sounds();
+	
 	//khsound::play_sound(khsound::E1M1_MUSIC,0.6f);
 }
 std::string map_find_ent_prop_in_string(const char* key, const std::string& str, size_t start, size_t end)

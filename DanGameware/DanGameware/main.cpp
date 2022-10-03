@@ -123,7 +123,8 @@ bool init()
 	glfwSetKeyCallback(_winHandle, key_callback);
 	glfwSetCursorPosCallback(_winHandle, mouseMoveListener);
 	glfwSetMouseButtonCallback(_winHandle, mouse_button_callback);
-	glfwSetInputMode(_winHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(_winHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	edit_mode = true;
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -144,6 +145,7 @@ bool init()
 	colors[ImGuiCol_Button] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);
 	colors[ImGuiCol_ResizeGrip] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);
 	colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.14f, 0.13f, 1.00f);
+	colors[ImGuiCol_Text] = ImVec4(0.79f, 0.75f, 0.63f, 1.00f);
 
 
 	auto& st = ImGui::GetStyle();
@@ -233,7 +235,8 @@ void updateEmitters(float dt)
 }
 void gameupdate(float dt)
 {
-	g_input.capture(_winHandle);
+	if(!edit_mode)
+		g_input.capture(_winHandle);
 	//ai
 	if (g_entities != nullptr)
 	{
@@ -302,6 +305,42 @@ int maadwawdin(void) {
 	lua_close(L);
 	return 0;
 }
+int ldupdate_cnt = 0;
+void mapLoadUpdate()
+{
+	glfwPollEvents();
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+	ImVec2 window_pos, window_pos_pivot;
+	window_pos.x = 10;
+	window_pos.y = 10;
+	window_pos_pivot.x = 0;
+	window_pos_pivot.y = 0;
+	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+	window_flags |= ImGuiWindowFlags_NoMove;
+	ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+	bool pop;
+	ImGui::Begin("Stats", &pop, window_flags);
+	ImGui::Text("Loading %d models", ldupdate_cnt * 2);
+	ImGui::End();
+	ldupdate_cnt++;
+	ImGui::Render();
+	glClearColor(ldupdate_cnt * 0.02, 0, 0, 255);
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	//float points[] = { 0,0,0,1,     1,0,1,1,           1,0.562,1,0,      0,0.562,0,0 };
+	//h3dShowOverlays(points, 4, 1, 1, 1, 1, background_mat, 0);
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	glfwMakeContextCurrent(_winHandle);
+	glfwSwapBuffers(_winHandle);
+}
+void main_load_map()
+{
+	mapLoad("finalook", &mapLoadUpdate);
+}
 int main(int argc, char** argv);
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
@@ -313,13 +352,9 @@ int main(int argc, char** argv)
 	init();
 	initGame(WINDOW_WIDTH, WINDOW_HEIGHT);
 	debug_draw_init();
-
-	//std::thread([](){
-		//mapLoad("esatwall");
-	//}).join();
 	
-	mapLoad("esatwall");
-	double last_t = glfwGetTime();;
+	mapLoad("finalook", &mapLoadUpdate);
+	double last_t = glfwGetTime();
 	while (running)
 	{
 		//dt
@@ -333,6 +368,22 @@ int main(int argc, char** argv)
 		
 		//imgui
 		imgui_frame();
+		if (glfwGetKey(_winHandle, GLFW_KEY_TAB) == GLFW_PRESS && allow_tab)
+		{
+			edit_mode = !edit_mode;
+			allow_tab = false;
+			if (edit_mode)
+				glfwSetInputMode(_winHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			else
+				glfwSetInputMode(_winHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			allow_tab = false;
+
+		}
+		if (glfwGetKey(_winHandle, GLFW_KEY_TAB) == GLFW_RELEASE)
+		{
+			allow_tab = true;
+		}
+
 
 		if (dt > 0.1f) dt = 0.1f;
 		
@@ -445,23 +496,7 @@ void imgui_frame()
 	//debug_draw_imgui(main_camera);
 
 	imgui_stats_window();
-
-	if (glfwGetKey(_winHandle, GLFW_KEY_TAB) == GLFW_PRESS && allow_tab)
-	{
-		edit_mode = !edit_mode;
-		allow_tab = false;
-		if (edit_mode)
-			glfwSetInputMode(_winHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		else
-			glfwSetInputMode(_winHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		allow_tab = false;
-
-	}
-	if (glfwGetKey(_winHandle, GLFW_KEY_TAB) == GLFW_RELEASE)
-	{
-		allow_tab = true;
-	}
-
+	
 	if (edit_mode)
 	{
 		//ImGui::ShowDemoWindow();

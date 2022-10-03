@@ -25,7 +25,7 @@ class MapManager
 
 	}
 };*/
-void mapLoad(const char* name);
+void mapLoad(const char* name, std::function<void()> update);
 
 
 
