@@ -489,7 +489,7 @@ void main( void )
 #ifdef _F04_EnvMapping
 	vec3 refl = textureCube(envMap, reflect( pos.xyz - viewerPos, normalize( normal ) ) ).rgb;
 	refl = pow(refl,vec3(2.2));
-	gl_FragColor.rgb = (max(light*lighpow,0.5)+(refl*2.0*matspec))*albedo.rgb;
+	gl_FragColor.rgb = (max(light.rgb*lighpow,0.5)+(refl*2.0*matspec))*albedo.rgb;
 #endif
 	vec3 viewDir = viewerPos - pos.xyz;
 	//Fog parameters, could make them uniforms and pass them into the fragment shader
