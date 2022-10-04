@@ -1,4 +1,5 @@
 #include <unordered_map>
+#include <functional>
 #include "khmath.h"
 #include "soloud.h"
 #include "soloud_wav.h"
@@ -25,17 +26,26 @@ namespace khsound
 		s->load(path);
 		sounds[id] = s;
 	}
-	void load_sounds()
+	void load_sounds(std::function<void()> update)
 	{
 		loadSnd("sounds\\sfx\\footstep\\footstep1.wav", SOUND_FOOTSTEP_1);
+		update();
 		loadSnd("sounds\\sfx\\footstep\\footstep2.wav", SOUND_FOOTSTEP_2);
+		update();
 		loadSnd("sounds\\sfx\\footstep\\footstep3.wav", SOUND_FOOTSTEP_3);
+		update();
 		loadSnd("sounds\\sfx\\footstep\\footstep4.wav", SOUND_FOOTSTEP_4);
+		update();
 		loadSnd("sounds\\sfx\\footstep\\footstep5.wav", SOUND_FOOTSTEP_5);
+		update();
 		loadSnd("sounds\\sfx\\footstep\\footstep6.wav", SOUND_FOOTSTEP_6);
+		update();
 		loadSnd("sounds\\music\\e1m1.mp3", E1M1_MUSIC);
+		update();
 		loadSnd("sounds\\sfx\\jump.mp3", SOUND_JUMP);
+		update();
 		loadSnd("sounds\\sfx\\impact\\impact1.wav", SOUND_IMPACT_1);
+		update();
 		loadSnd("sounds\\sfx\\whoosh.wav", SOUND_WHOOSH);
 		
 		

@@ -1,5 +1,5 @@
 #pragma once
-
+#include <functional>
 
 
 namespace khsound
@@ -17,7 +17,7 @@ namespace khsound
 	const SND_ID SOUND_WHOOSH = 10;
 	
 	
-	void load_sounds();
+	void load_sounds(std::function<void()> update);
 	void play_sound(SND_ID snd, float vol = -1);
 	void play_sound_3d(SND_ID snd, float x, float y, float z, float vol = 1);
 	void init_sound();

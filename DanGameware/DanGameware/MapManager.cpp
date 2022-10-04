@@ -128,7 +128,7 @@ void mapPreload(const char* name, std::function<void()> update)
 	}
 	//4-load resources from disk
 	loadResourcesFromDisk(content_dir, update);
-	khsound::load_sounds();
+	khsound::load_sounds(update);
 
 }
 
