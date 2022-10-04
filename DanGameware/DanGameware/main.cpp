@@ -124,7 +124,6 @@ bool init()
 	glfwSetCursorPosCallback(_winHandle, mouseMoveListener);
 	glfwSetMouseButtonCallback(_winHandle, mouse_button_callback);
 	glfwSetInputMode(_winHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-	edit_mode = true;
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -215,6 +214,7 @@ void initGame(int winWidth, int winHeight)
 	H3DRes model_shader3 = h3dAddResource(H3DResTypes::Shader, "shaders/model_org2.shader", 0);
 	H3DRes skybox_shader = h3dAddResource(H3DResTypes::Shader, "shaders/skybox.shader", 0);
 	H3DRes particle_shader = h3dAddResource(H3DResTypes::Shader, "shaders/particle.shader", 0);
+	H3DRes overlay_shader = h3dAddResource(H3DResTypes::Shader, "shaders/overlay.shader", 0);
 	background_mat = h3dAddResource(H3DResTypes::Material, "textures/backgroundfill.material.xml", 0);
 	h3dutLoadResourcesFromDisk("./enginecontent/");
 
@@ -353,7 +353,9 @@ void mapLoadUpdate()
 }
 void main_load_map()
 {
+	auto t1 = glfwGetTime();
 	mapLoad("esatwall", &mapLoadUpdate);
+	dw_console_log("map load time = %0.2f", glfwGetTime() - t1);
 }
 int main(int argc, char** argv);
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
@@ -368,6 +370,7 @@ int main(int argc, char** argv)
 	debug_draw_init();
 	
 	main_load_map();
+	glfwSetInputMode(_winHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	double last_t = glfwGetTime();
 	while (running)
 	{
