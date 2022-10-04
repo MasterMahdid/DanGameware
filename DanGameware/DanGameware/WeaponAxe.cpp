@@ -5,6 +5,8 @@
 #include "SoundEngine.h"
 #include "ai.h"
 #include "utMath.h"
+#include "debug_draw.h"
+
 extern H3DNode main_camera;
 WeaponAxe* g_weapon_axe;
 extern gentity_t g_entities;
@@ -121,7 +123,7 @@ void ProjectileAxe::shoot(Vector3df start_pos, Vector3df direction,Hndl ignorePa
 {
 	float ddr = -atan2f(direction.z, direction.x) / H3D_DEG2RAD;
 	h3dSetNodeTransform(projectile, start_pos.x, start_pos.y, start_pos.z, 0, ddr, 0, 1, 1, 1);
-	shoot_direction = direction * 1500;
+	shoot_direction = direction * 1300;
 	float pp[3]{ start_pos.x,start_pos.y,start_pos.z };
 	phys_handle = g_phyis.createSphereProjectile(7, pp, [&](const contanctInfo& ci)
 	{
@@ -130,7 +132,9 @@ void ProjectileAxe::shoot(Vector3df start_pos, Vector3df direction,Hndl ignorePa
 		h3dGetNodeTransform(projectile, &x, &y, &z, nullptr, &ry, &rz, nullptr, nullptr, nullptr);
 		rz = 200;
 		//h3dSetNodeTransform(projectile, x, y, z, 0, ry, rz, 1, 1, 1);
-		h3dSetNodeTransform(projectile, ci.contactPoint.x, ci.contactPoint.y, ci.contactPoint.z, 0, ry, rz, 1, 1, 1);
+		//h3dSetNodeTransform(projectile, ci.contactPoint.x, ci.contactPoint.y, ci.contactPoint.z, 0, ry, rz, 1, 1, 1);
+		//dd_sphere(ci.contactPoint, 20, Vector3df(0, 0, 1), 3);
+		
 		H3DNode gg = projectile;
 		tweener.delayCall(0.06, [=]() {
 			unsigned int cnt = h3dFindNodes(gg, "", H3DNodeTypes::Emitter);
@@ -160,7 +164,7 @@ void ProjectileAxe::Update(float dt)
 	h3dGetNodeTransform(projectile, &x, &y, &z, nullptr, nullptr, &rz, nullptr, nullptr, nullptr);
 	rz += dt * -1200;//rotational speed
 
-	shoot_direction.y -= 400 * dt;//gravity;
+	shoot_direction.y -= 800 * dt;//gravity;
 	
 	float ddr = -atan2f(shoot_direction.z, shoot_direction.x)/ H3D_DEG2RAD;
 	auto move_dir = shoot_direction*dt;
@@ -170,7 +174,7 @@ void ProjectileAxe::Update(float dt)
 	z += move_dir.z;
 	
 	h3dSetNodeTransform(projectile, x, y, z, 0, ddr, rz, 1, 1, 1);
-
+	//dd_sphere(Vector3df(x,y,z), 10, Vector3df(0, 0, 1));
 	g_phyis.setProjectilePosition(phys_handle, Vector3df(x, y, z));
 
 }
