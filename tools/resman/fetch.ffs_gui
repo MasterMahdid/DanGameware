@@ -36,7 +36,7 @@
     </Filter>
     <FolderPairs>
         <Pair>
-            <Left>sftp://dangamew@5.144.130.110:22/home/dangamew/private_ftp/alv_content/files|pass64=dERNOTg1Mno6R3VpK1k=</Left>
+            <Left>sftp://dangamew@5.144.130.110:22/home/dangamew/private_ftp/alv_content/files|chan=10|zlib|pass64=dERNOTg1Mno6R3VpK1k=</Left>
             <Right>%ALVAHSHI_CONTENT%</Right>
         </Pair>
     </FolderPairs>
