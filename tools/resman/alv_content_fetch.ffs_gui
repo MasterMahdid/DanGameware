@@ -6,7 +6,15 @@
         <IgnoreTimeShift/>
     </Compare>
     <Synchronize>
-        <Variant>Mirror</Variant>
+        <Variant>Custom</Variant>
+        <CustomDirections>
+            <LeftOnly>right</LeftOnly>
+            <RightOnly>none</RightOnly>
+            <LeftNewer>right</LeftNewer>
+            <RightNewer>right</RightNewer>
+            <Different>right</Different>
+            <Conflict>right</Conflict>
+        </CustomDirections>
         <DetectMovedFiles>false</DetectMovedFiles>
         <DeletionPolicy>Permanent</DeletionPolicy>
         <VersioningFolder Style="TimeStamp-File">ftp://admin@192.168.1.133:21/volume/alv_content/fileversions|pass64=YWRtaW4=</VersioningFolder>
@@ -28,7 +36,7 @@
     </Filter>
     <FolderPairs>
         <Pair>
-            <Left>ftp://admin@192.168.1.133:21/volume/alv_content/files|pass64=YWRtaW4=</Left>
+            <Left>ftp://content@192.168.1.133:21/data/files|pass64=Y29udGVudA==</Left>
             <Right>%ALVAHSHI_CONTENT%</Right>
         </Pair>
     </FolderPairs>
