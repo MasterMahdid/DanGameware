@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FreeFileSync XmlType="GUI" XmlFormat="17">
     <Compare>
-        <Variant>Size</Variant>
+        <Variant>TimeAndSize</Variant>
         <Symlinks>Exclude</Symlinks>
         <IgnoreTimeShift/>
     </Compare>
@@ -36,7 +36,7 @@
     </Filter>
     <FolderPairs>
         <Pair>
-            <Left>ftp://content@192.168.1.133:21/data/files|pass64=Y29udGVudA==</Left>
+            <Left>ftp://dangamew@5.144.130.110:21/private_ftp/alv_content/files|pass64=dERNOTg1Mno6R3VpK1k=</Left>
             <Right>%ALVAHSHI_CONTENT%</Right>
         </Pair>
     </FolderPairs>
