@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FreeFileSync XmlType="GUI" XmlFormat="17">
     <Compare>
-        <Variant>Content</Variant>
+        <Variant>Size</Variant>
         <Symlinks>Exclude</Symlinks>
         <IgnoreTimeShift/>
     </Compare>
@@ -9,11 +9,11 @@
         <Variant>Mirror</Variant>
         <DetectMovedFiles>false</DetectMovedFiles>
         <DeletionPolicy>Versioning</DeletionPolicy>
-        <VersioningFolder Style="TimeStamp-Folder">ftp://admin@192.168.1.133:21/volume/alv_content/trash|pass64=YWRtaW4=</VersioningFolder>
+        <VersioningFolder Style="TimeStamp-Folder">ftp://content@192.168.1.133:21/data/trash|pass64=Y29udGVudA==</VersioningFolder>
     </Synchronize>
     <Filter>
         <Include>
-            <Item>maps/esatwall/*</Item>
+            <Item>*</Item>
         </Include>
         <Exclude>
             <Item>\System Volume Information\</Item>
@@ -29,14 +29,14 @@
     <FolderPairs>
         <Pair>
             <Left>%ALVAHSHI_CONTENT%</Left>
-            <Right>ftp://admin@192.168.1.133:21/volume/alv_content/files|pass64=YWRtaW4=</Right>
+            <Right>ftp://content@192.168.1.133:21/data/files|pass64=Y29udGVudA==</Right>
         </Pair>
     </FolderPairs>
     <Errors Ignore="false" Retry="0" Delay="5"/>
     <PostSyncCommand Condition="Completion"/>
-    <LogFolder>ftp://admin@192.168.1.133:21/volume/alv_content/logs|pass64=YWRtaW4=</LogFolder>
+    <LogFolder>ftp://content@192.168.1.133:21/data/logs|pass64=Y29udGVudA==</LogFolder>
     <EmailNotification Condition="Always"/>
     <Gui>
-        <GridViewType>Difference</GridViewType>
+        <GridViewType>Action</GridViewType>
     </Gui>
 </FreeFileSync>
