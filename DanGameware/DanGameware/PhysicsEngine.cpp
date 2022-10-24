@@ -185,7 +185,38 @@ void getTrianglesFromOctree(SOctreeNode* node, s32& trianglesWritten,s32 maximum
 				maximumSize, box, mat, triangles);
 }
 //====================================================================================================================
-
+struct Brush
+{
+	Plane* planes;
+	size_t numPlanes;
+};
+struct Trigger
+{
+	int entity;
+	Aabbox3d aabb;
+	u32 colisionMask;
+	Brush* brushes;
+	u32 numBrushes;
+};
+bool pointInsideTrigger(const Trigger* t,Vector3df point)
+{
+	if (t->aabb.isPointInside(point) == false)
+		return false;
+	for (u32 i = 0; i < t->numBrushes; i++)
+	{
+		bool inside = true;
+		for (u32 j = 0; j < t->brushes[i].numPlanes; j++)
+		{
+			if(t->brushes[i].planes[i].isPointFront(point))
+			{
+				inside = false;
+				break;
+			}
+		}
+		if (inside)
+			return true;
+	}
+}
 void physicEngine::loadLevel(float* tri_data, size_t tri_count)
 {
 	std::vector<Triangle> tris;

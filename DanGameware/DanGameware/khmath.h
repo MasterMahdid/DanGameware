@@ -256,6 +256,10 @@ struct Plane
 	{
 		return point.dot(normal) + d;
 	}
+	inline bool isPointFront(const Vector3df& p)const
+	{
+		return (p - (normal*d)).dot(p) > 0;
+	}
 };
 struct Triangle
 {

@@ -35,6 +35,17 @@ struct gentity_s
 	int health;
 	bool takedamage;
 };
+enum class MOVE_TYPE
+{
+	NONE,
+	PAWN,
+	PROJECTILE,
+	PROJECTILE_BOUNCE,
+};
+class Entity
+{
+
+};
 void dw_loadmap(char* mapname);
 EntHandle dw_create_entity(char* filename);
 void dw_ent_distroy(EntHandle ent);

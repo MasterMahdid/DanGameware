@@ -30,7 +30,8 @@ public:
 	float* createLevelPhysTriData(H3DRes level_mesh_res, int& tri_count);
 	//void destroy(Hndl);
 	physObjectTransform getTransform(Hndl);
-	bool physicEngine::trace(Vector3df from, Vector3df to, Vector3df& hit);
+	bool trace(Vector3df from, Vector3df to, Vector3df& hit);
+	bool sphereCast(Vector3df from, Vector3df to, f32 radius, Vector3df& hit);
 
 
 };
