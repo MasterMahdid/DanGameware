@@ -7,7 +7,7 @@ inline bool isKeyDown(int key, GLFWwindow* _winHandle)
 {
 	return glfwGetKey(_winHandle, key) == GLFW_PRESS;
 }
-bool always_run = false;
+bool always_run = true;
 void playerInput::capture(GLFWwindow* _winHandle)
 {
 	this->dx = this->dy = 0;

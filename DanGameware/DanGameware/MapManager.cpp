@@ -21,10 +21,12 @@ extern std::vector<GameObject*> gameObjects_array;
 extern H3DNode main_camera;
 extern std::vector<H3DNode> dynamic_lights;
 extern gentity_t g_entities;
+extern size_t g_entities_len;
 H3DRes envRes, level_mesh_res;
 std::vector<std::string> lms;
 int add_light_from_map(const char* filename);
 int add_player_from_map(const char* filename);
+int add_enemy_from_map(const char* filename);
 void removeAll()
 {
 	//TODO: implement this correctly
@@ -211,39 +213,16 @@ void mapLoad(const char* name, std::function<void()> update)
 	gameObjects_array.push_back(wx);
 	g_weapon_axe = wx;
 
-	
-
-
-	
+	g_entities = new gentity_s[100];
 
 	
-	g_entities = new gentity_s[2];
-
-	auto emn = new Enemy();
-	gameObjects_array.push_back(emn);
-	
-	
-	g_entities[0].node = main_camera;
-	g_entities[0].think = nullptr;
-	g_entities[0].speed = 0;
-	g_entities[0].movedir = Vector3df();
-
-	g_entities[1].enemy = &g_entities[0];
-	g_entities[1].speed = 0;
-	g_entities[1].movedir = Vector3df();
-	
-
-	
-	
-
 	
 	char mapfn[1024];
 	sprintf(mapfn, "%s\\maps\\%s.map", baseq3,name);
 	
 	add_light_from_map(mapfn);
 	add_player_from_map(mapfn);
-
-	
+	add_enemy_from_map(mapfn);
 	//khsound::play_sound(khsound::E1M1_MUSIC,0.6f);
 }
 std::string map_find_ent_prop_in_string(const char* key, const std::string& str, size_t start, size_t end)
@@ -364,12 +343,33 @@ int add_player_from_map(const char* filename)
 		auto pos = map_get_end_prop_value_as_position(temp_str);
 		
 		h3dSetNodeTransform(main_camera, pos.x, pos.y, pos.z, 1, 90, 1, 1, 1, 1);
-		auto pp = new FPSCharacter(main_camera);
+		auto pp = new FPSCharacter(main_camera,&g_entities[g_entities_len++]);
 		gameObjects_array.push_back(pp);
 		/*auto flycam = new flyThroughCam(main_camera);
 		gameObjects_array.push_back(flycam);*/
 
 		break;
+	}
+	return lind;
+}
+int add_enemy_from_map(const char* filename)
+{
+	std::ifstream t(filename);
+	std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+	size_t of = 0;
+	int lind = 0;
+	while (true)
+	{
+		of = str.find("\"classname\" \"info_player_deathmatch\"", of + 1);
+		if (of == std::string::npos)
+			break;
+		auto of_end = str.find("}", of);
+		auto temp_str = map_find_ent_prop_in_string("origin", str, of, of_end);
+		auto pos = map_get_end_prop_value_as_position(temp_str);
+		auto ent = &g_entities[g_entities_len++];
+		ent->pos1 = pos;
+		auto emn = new Enemy(ent);
+		gameObjects_array.push_back(emn);
 	}
 	return lind;
 }

@@ -40,6 +40,7 @@ Tween g_tween;
 
 H3DNode main_camera = 0;
 gentity_t g_entities = nullptr;
+size_t g_entities_len = 0;
 bool game_pause = false;
 H3DRes background_mat;
 
@@ -245,7 +246,7 @@ void gameupdate(float dt)
 	//ai
 	if (g_entities != nullptr)
 	{
-		update_ents(g_entities, 2, dt);
+		update_ents(g_entities, g_entities_len, dt);
 	}
 	//physic update
 	commitGameObjectListChanges();

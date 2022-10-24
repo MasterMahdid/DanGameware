@@ -2,10 +2,9 @@
 #include "Tween.h"
 #include "khmath.h"
 #include "SoundEngine.h"
-#include "ai.h"
 #include "debug_draw.h"
 void dw_console_log(const char* fmt, ...);
-extern gentity_t g_entities;
+gentity_t player_ent;
 int player_health = 100;
 bool playerDead = false;
 namespace fpscharacter_internal
@@ -34,7 +33,7 @@ void detectMat()
 	cammat = h3dAddResource(H3DResTypes::Material, "pipelines/postalve.material.xml",0);
 	bloodMaskIndex = h3dFindResElem(cammat, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "bloodMask");
 }
-FPSCharacter::FPSCharacter(H3DNode cam)
+FPSCharacter::FPSCharacter(H3DNode cam,gentity_t ent)
 {
 	camera = cam;
 	float cx, cy, cz;
@@ -43,8 +42,13 @@ FPSCharacter::FPSCharacter(H3DNode cam)
 	pawn = g_phyis.createPawn(16, 56, pos,(void*)this,PAWN_FLAG_PLAYER);
 	walk_tween.callFuncPeriodic(2, 0, [](float x) {cam_y_ofset2 = x; }, 0.5, EASING_FUNCTION::SineEaseOut, 26,0,0,true);
 	walk_tween.callFuncPeriodic(-0.4, +0.4, [](float x) {cam_rz = x; }, 0.4, EASING_FUNCTION::SineEaseOut, 26, 0, 0, true);
-	g_entities[0].pawn = pawn;
+	ent->pawn = pawn;
 
+	ent->node = cam;
+	ent->think = nullptr;
+	ent->speed = 0;
+	ent->movedir = Vector3df();
+	::player_ent = ent;
 	/*auto light = h3dAddLightNode(cam, "Light1", 0, "LIGHTING", "SHADOWMAP");
 	h3dSetNodeTransform(light, 0, 0, 0, 0, 0, 0, 1, 1, 1);
 	h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
@@ -117,7 +121,7 @@ void FPSCharacter::PhysicUpdate(float dt)
 	}
 	if (g_input.attack&& allow_attack)
 	{
-		g_weapon_axe->attack();
+		g_weapon_axe->attack(pawn);
 		//onProjectileHit(Vector3df());
 		//allow_attack = false;
 	}
@@ -247,7 +251,7 @@ void FPSCharacter::onProjectileHit(Vector3df hit_pos)
 		return;
 	
 
-	player_health -= random(3,8);
+	player_health -= random(8,15);
 	if (player_health <= 0)
 	{
 		playerDead = true;
@@ -266,7 +270,7 @@ void FPSCharacter::onProjectileHit(Vector3df hit_pos)
 		tween.callFuncPeriodic(0.2, 0, [](float x) {bloodmask = x; }, 0.2, EASING_FUNCTION::Linear, 113, 0.05);
 
 
-		tween.callFuncPeriodic(0, 2, [](float x) {ofset_rx = x; }, 1, EASING_FUNCTION::ElasticEaseOut, 113);
+		tween.callFuncPeriodic(0, 4, [](float x) {ofset_rx = x; }, 1, EASING_FUNCTION::ElasticEaseOut, 113);
 		//tween.callFuncPeriodic(4, 0, [](float x) {ofset_rx = x; }, 0.1, EASING_FUNCTION::Linear, 113, 0.8);
 	}
 

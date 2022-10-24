@@ -9,7 +9,6 @@
 
 extern H3DNode main_camera;
 WeaponAxe* g_weapon_axe;
-extern gentity_t g_entities;
 extern std::vector<GameObject*> gameObjects_array;
 namespace WeaponAxe_internal
 {
@@ -18,6 +17,7 @@ namespace WeaponAxe_internal
 	Tween tweener;
 	bool attacking = false;
 	bool allow_attack = true;
+	Hndl axeignorePawn;
 }
 using namespace WeaponAxe_internal;
 void WeaponAxe::initRes()
@@ -66,7 +66,7 @@ void WeaponAxe::Update(float dt)
 			float dir_rad_y = dy*H3D_DEG2RAD;
 			float dir_rad_x = dx*H3D_DEG2RAD;
 			auto move_dir = Vector3df(-sinf(dir_rad_y), sinf(dir_rad_x), -cosf(dir_rad_y));
-			projectile->shoot(Vector3df(xa2.x, xa2.y, xa2.z), move_dir, g_entities[0].pawn);
+			projectile->shoot(Vector3df(xa2.x, xa2.y, xa2.z), move_dir, axeignorePawn);
 		
 
 			h3dSetModelAnimParams(this->modelNode, 1, this->animTime, 0);
@@ -89,13 +89,14 @@ void WeaponAxe::setAnimSpeed(float speed)
 {
 	tweener.callFuncPeriodic(animspeed, speed, [&](float f) {animspeed = f; }, 0.2f, EASING_FUNCTION::Linear);
 }
-void WeaponAxe::attack()
+void WeaponAxe::attack(Hndl ignorePawn)
 {
 	if (!allow_attack)
 		return;
 	attacking = true;
 	allow_attack = false;
 	animTime = 0;
+	axeignorePawn = ignorePawn;
 }
 void WeaponAxe::jump()
 {

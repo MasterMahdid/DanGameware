@@ -3,6 +3,8 @@
 #include "Horde3D.h"
 struct gentity_s;
 typedef gentity_s * gentity_t;
+
+extern gentity_t player_ent;
 struct gentity_s
 {
 	const char* classname;

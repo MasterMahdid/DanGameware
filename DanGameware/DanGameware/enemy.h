@@ -1,7 +1,6 @@
 #pragma once;
 #include "Gameplay.h"
-#include "fsm.h"
-
+#include "ai.h"
 class Enemy : public GameObject
 {
 private:
@@ -14,8 +13,9 @@ private:
 	float idle_walk_fade;
 	bool walking;
 	bool alive;
+	gentity_t ent;
 public:
-	Enemy();
+	Enemy(gentity_t _ent);
 	~Enemy();
 	static void add_res();
 	virtual void PhysicUpdate(float dt)override;
@@ -27,7 +27,3 @@ class EnemyAnimationController
 
 };
 
-class FollowStaet : public State
-{
-	virtual void execute(float dt)override;
-};

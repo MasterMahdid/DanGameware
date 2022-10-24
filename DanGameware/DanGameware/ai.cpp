@@ -159,7 +159,10 @@ void think_stand(gentity_t self)
 
 void init_enemy(gentity_t ent)
 {
+	ent->speed = 0;
+	ent->movedir = Vector3df();
 	ent->think = think_stand;
 	//ent->think = think_shoot;
 	ent->nextthink = 0.1;
+	ent->enemy = player_ent;
 }

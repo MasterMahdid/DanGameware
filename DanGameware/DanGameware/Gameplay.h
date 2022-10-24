@@ -2,6 +2,8 @@
 #include "PhysicsEngine.h"
 #include <Horde3D.h>
 #include "khmath.h"
+#include "ai.h"
+
 #define H3D_DEG2RAD  0.017453292f
 
 const u32 PAWN_FLAG_ENEMY = 1;
@@ -38,7 +40,7 @@ private:
 	H3DNode camera;
 
 public:
-	FPSCharacter(H3DNode cam);
+	FPSCharacter(H3DNode cam, gentity_t ent);
 	~FPSCharacter();
 	virtual void PhysicUpdate(float dt)override;
 	virtual void Update(float dt)override;
@@ -57,7 +59,7 @@ public:
 	//virtual void PhysicUpdate(float dt)override;
 	virtual void Update(float dt)override;
 	void setAnimSpeed(float speed);
-	void attack();
+	void attack(Hndl ignorePawn);
 	void jump();
 	void land();
 	void death();
