@@ -5,6 +5,7 @@ struct contanctInfo
 {
 	Vector3df contactPoint;
 	Vector3df normal;
+	bool isOtherPawn;
 };
 
 bool ColShpereTriangle(const Triangle& t, const Vector3df& shpere_center, float shpere_radius, contanctInfo& ci);

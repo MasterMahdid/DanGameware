@@ -4,6 +4,7 @@
 #include "enemy.h"
 #include "ai.h"
 #include "debug_draw.h"
+void dw_console_log(const char* fmt, ...);
 H3DRes enemy_res,enemy_anim_run_res;
 extern H3DNode main_camera;
 extern gentity_t g_entities;
@@ -44,7 +45,7 @@ void Enemy::Update(float dt)
 {
 	float* mat = new float[16];
 	h3dGetNodeTransMats(node, NULL, (const float**)&mat);
-	dd_axes(mat, 0);
+	//dd_axes(mat, 0);
 
 	float PI = std::atan(1) * 4;
 
@@ -52,7 +53,7 @@ void Enemy::Update(float dt)
 	{
 		float minx, miny, minz, maxx, maxy, maxz;
 		h3dGetNodeAABB(node, &minx, &miny, &minz, &maxx, &maxy, &maxz);
-		dd_aabb(Vector3df(minx, miny, minz), Vector3df(maxx, maxy, maxz), Vector3df(1, 0, 1));
+		//dd_aabb(Vector3df(minx, miny, minz), Vector3df(maxx, maxy, maxz), Vector3df(1, 0, 1));
 	}
 	{
 		float x, y, z,ryy;
@@ -68,14 +69,14 @@ void Enemy::Update(float dt)
 			bool res = g_phyis.trace(camv, to, hit);
 			if (res)
 			{
-				dd_sphere(hit, 5, Vector3df(1, 0, 0));
-				dd_line(hit, camv, Vector3df(1, 1, 0), 0);
+				//dd_sphere(hit, 5, Vector3df(1, 0, 0));
+				//dd_line(hit, camv, Vector3df(1, 1, 0), 0);
 
 			}
 			else
 			{
-				dd_line(to, camv, Vector3df(1, 1, 0), 0);
-				dd_point(to, Vector3df(1, 1, 0), 10);
+				//dd_line(to, camv, Vector3df(1, 1, 0), 0);
+				//dd_point(to, Vector3df(1, 1, 0), 10);
 
 			}
 		}
@@ -102,7 +103,6 @@ void Enemy::Update(float dt)
 }
 void Enemy::onProjectileHit(Vector3df hit_pos)
 {
-	
-	
+	dw_console_log("hit enemy");
 }
 

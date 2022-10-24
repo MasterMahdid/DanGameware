@@ -101,8 +101,8 @@
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;opengl32.lib;$(SolutionDir)..\KhHorde3D\Debug\KhHorde3D.lib;$(ProjectDir)lib\GLFW\lib\glfw3.lib;$(ProjectDir)lib\soloud\lib\soloud_static.lib;$(ProjectDir)lib\soloud\lib\soloud.lib;$(ProjectDir)lib\lua\lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)lib\lua\lua54.dll $(OutDir)lua54.dll
-xcopy $(ProjectDir)content\* $(OutDir)\enginecontent /S /I /Y</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -137,8 +137,8 @@ xcopy $(ProjectDir)content\* $(OutDir)\enginecontent /S /I /Y</Command>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;opengl32.lib;$(SolutionDir)..\KhHorde3D\Release\KhHorde3D.lib;$(ProjectDir)lib\GLFW\lib\glfw3.lib;$(ProjectDir)lib\soloud\lib\soloud_static.lib;$(ProjectDir)lib\soloud\lib\soloud.lib;$(ProjectDir)lib\lua\lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)lib\lua\lua54.dll $(OutDir)lua54.dll
-xcopy $(ProjectDir)content\* $(OutDir)\enginecontent /S /I /Y</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

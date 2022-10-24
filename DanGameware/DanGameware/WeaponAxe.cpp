@@ -49,8 +49,8 @@ void WeaponAxe::Update(float dt)
 	else
 	{
 		h3dSetModelAnimParams(this->modelNode, 1, this->animTime, 1);
-		this->animTime += 30 * dt;
-		if (animTime >= 15)
+		this->animTime += 60 * dt;
+		if (animTime >= 3)
 		{
 			auto projectile = new ProjectileAxe();
 			addGameObject(projectile);
@@ -77,7 +77,7 @@ void WeaponAxe::Update(float dt)
 			{
 				h3dSetNodeTransform(this->modelNode, f, 0, 0, -f, 0, 0, 1, 1, 1);
 			}, 0.3, EASING_FUNCTION::CircularEaseOut,213,0.25);
-			tweener.delayCall(0.5, [&]() {allow_attack = true; });
+			tweener.delayCall(0.2, [&]() {allow_attack = true; });
 		}
 	}
 	
@@ -123,32 +123,22 @@ void ProjectileAxe::shoot(Vector3df start_pos, Vector3df direction,Hndl ignorePa
 {
 	float ddr = -atan2f(direction.z, direction.x) / H3D_DEG2RAD;
 	h3dSetNodeTransform(projectile, start_pos.x, start_pos.y, start_pos.z, 0, ddr, 0, 1, 1, 1);
-	shoot_direction = direction * 1300;
+	shoot_direction = direction * 1200;
 	float pp[3]{ start_pos.x,start_pos.y,start_pos.z };
 	phys_handle = g_phyis.createSphereProjectile(7, pp, [&](const contanctInfo& ci)
 	{
-		//h3dRemoveNode(projectile);
-		float x, y, z, ry, rz;
-		h3dGetNodeTransform(projectile, &x, &y, &z, nullptr, &ry, &rz, nullptr, nullptr, nullptr);
-		rz = 200;
-		//h3dSetNodeTransform(projectile, x, y, z, 0, ry, rz, 1, 1, 1);
-		//h3dSetNodeTransform(projectile, ci.contactPoint.x, ci.contactPoint.y, ci.contactPoint.z, 0, ry, rz, 1, 1, 1);
-		//dd_sphere(ci.contactPoint, 20, Vector3df(0, 0, 1), 3);
-		
-		H3DNode gg = projectile;
-		tweener.delayCall(0.06, [=]() {
-			unsigned int cnt = h3dFindNodes(gg, "", H3DNodeTypes::Emitter);
-			for (unsigned int i = 0; i < cnt; ++i)
-				h3dRemoveNode(h3dGetNodeFindResult(i));
-		});
+		h3dRemoveNode(projectile);
 		projectile = 0;
 
-		float cam_x, cam_y, cam_z;
-		h3dGetNodeTransform(main_camera, &cam_x, &cam_y, &cam_z, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
-		auto len = (ci.contactPoint - Vector3df(cam_x, cam_y, cam_z)).getLength();
-		float vol = 100.f / len;
-		vol = clamp(vol, 0, 1);
-		khsound::play_sound(khsound::SOUND_IMPACT_1,vol);
+		if (ci.isOtherPawn == false)
+		{
+			float cam_x, cam_y, cam_z;
+			h3dGetNodeTransform(main_camera, &cam_x, &cam_y, &cam_z, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+			auto len = (ci.contactPoint - Vector3df(cam_x, cam_y, cam_z)).getLength();
+			float vol = 100.f / len;
+			vol = clamp(vol, 0, 1);
+			khsound::play_sound(khsound::SOUND_IMPACT_1, vol);
+		}
 	}, ignorePawn);
 	khsound::play_sound(khsound::SOUND_WHOOSH);
 }
@@ -162,7 +152,7 @@ void ProjectileAxe::Update(float dt)
 		return;
 	float x, y, z, rz;
 	h3dGetNodeTransform(projectile, &x, &y, &z, nullptr, nullptr, &rz, nullptr, nullptr, nullptr);
-	rz += dt * -1200;//rotational speed
+	rz += dt * -1900;//rotational speed
 
 	shoot_direction.y -= 800 * dt;//gravity;
 	

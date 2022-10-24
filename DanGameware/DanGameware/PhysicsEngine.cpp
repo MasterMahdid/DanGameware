@@ -255,6 +255,7 @@ Hndl physicEngine::createPawn(float radius, float height, float *pos,void* userd
 	p.vy = 0;
 	p.vz = 0;
 	p.user_data = userdata;
+	p.flags = flags;
 	pawns.push_back(pw);
 	return pawns.size() - 1;
 }
@@ -328,6 +329,7 @@ void physicEngine::update(float dt)
 			
 			auto t = tlist[i];
 			contanctInfo ci;
+			ci.isOtherPawn = false;
 			bool col = ColShpereTriangle(t, sc->pos, sc->radius,ci);
 			if (col)
 			{
@@ -348,12 +350,20 @@ void physicEngine::update(float dt)
 			Vector3df pos(p->x, p->y, p->z);
 			auto rr = Vector3df(0, p->ry, 0);
 			contanctInfo ci;
+			ci.isOtherPawn = true;
 			bool col = ColShpereCapsule(sc->pos, sc->radius, pos + rr, pos - rr, __max(p->rx, p->rz)/2,ci);
 			if (col)
 			{
 				sc->callback(ci);
 				sc->dead = true;
-				//((Enemy*)p->user_data)->onProjectileHit(ci.contactPoint);
+				if (p->flags&PAWN_FLAG_ENEMY)
+				{
+					((Enemy*)p->user_data)->onProjectileHit(ci.contactPoint);
+				}
+				if (p->flags&PAWN_FLAG_PLAYER)
+				{
+					((FPSCharacter*)p->user_data)->onProjectileHit(ci.contactPoint);
+				}
 				break;
 			}
 		}

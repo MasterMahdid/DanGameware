@@ -4,6 +4,7 @@
 #include "SoundEngine.h"
 #include "ai.h"
 #include "debug_draw.h"
+void dw_console_log(const char* fmt, ...);
 extern gentity_t g_entities;
 namespace fpscharacter_internal
 {
@@ -16,14 +17,21 @@ namespace fpscharacter_internal
 	bool last_grounded = false;
 	float cam_y_ofset;
 	float cam_y_ofset2;
-	float cam_rz = 0;
+	f32 cam_rx = 0, cam_ry = 0,cam_rz=0;
 	bool grounded_anim = true;
 	float falling_time = 0;
 	float current_moving_speed = 0;
-	float curr_y = 0;
-	bool first_update = true;
+	f32 bloodmask = 0;
 }
 using namespace fpscharacter_internal;
+
+H3DRes cammat;
+int bloodMaskIndex;
+void detectMat()
+{
+	cammat = h3dAddResource(H3DResTypes::Material, "pipelines/postalve.material.xml",0);
+	bloodMaskIndex = h3dFindResElem(cammat, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "bloodMask");
+}
 FPSCharacter::FPSCharacter(H3DNode cam)
 {
 	camera = cam;
@@ -35,16 +43,18 @@ FPSCharacter::FPSCharacter(H3DNode cam)
 	walk_tween.callFuncPeriodic(-0.4, +0.4, [](float x) {cam_rz = x; }, 0.4, EASING_FUNCTION::SineEaseOut, 26, 0, 0, true);
 	g_entities[0].pawn = pawn;
 
-	auto light = h3dAddLightNode(cam, "Light1", 0, "LIGHTING", "SHADOWMAP");
+	/*auto light = h3dAddLightNode(cam, "Light1", 0, "LIGHTING", "SHADOWMAP");
 	h3dSetNodeTransform(light, 0, 0, 0, 0, 0, 0, 1, 1, 1);
 	h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
 	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, 300);
-	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0,3);
+	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0,0);
 	h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 0);
 	h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, 0.003f);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 0, 1);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, 0.75);
-	h3dSetNodeParamF(light, H3DLight::ColorF3, 2,0.50);
+	h3dSetNodeParamF(light, H3DLight::ColorF3, 2,0.50);*/
+	detectMat();
+	//tween.callFuncPeriodic(0, 1, [](float x) {bloodmask = x; }, 0.4615 / 2, EASING_FUNCTION::Linear, 0, 0, 0, true);
 }
 FPSCharacter::~FPSCharacter()
 {
@@ -57,6 +67,19 @@ float damp_speed_x_vel = 0;
 float damp_speed_y = 0;
 float damp_speed_y_vel = 0;
 /*extern*/ float animTime;
+
+bool shaking = false;
+f32 shaking_mag;
+void StartShake(f32 mag,f32 duration)
+{
+	shaking = true;
+	shaking_mag = mag;
+	tween.delayCall(duration, [&]()
+	{
+		shaking = false;
+	});
+}
+bool allow_attack = true;
 void FPSCharacter::PhysicUpdate(float dt)
 {
 	float rx, ry, rz, t;
@@ -82,9 +105,15 @@ void FPSCharacter::PhysicUpdate(float dt)
 	{
 		g_weapon_axe->setAnimSpeed(2);
 	}
-	if (g_input.attack)
+	if (g_input.attack&& allow_attack)
 	{
-		g_weapon_axe->attack();
+		//g_weapon_axe->attack();
+		onProjectileHit(Vector3df());
+		allow_attack = false;
+	}
+	if (!g_input.attack)
+	{
+		allow_attack = true;
 	}
 	
 
@@ -110,7 +139,7 @@ void FPSCharacter::PhysicUpdate(float dt)
 		//tween.removeByTag(25);
 		//tween.callFuncPeriodic(30*dt, 0, [](float x) {vely = x; }, 0.2, EASING_FUNCTION::Linear,25);
 		g_weapon_axe->jump();
-		khsound::play_sound(khsound::SOUND_JUMP,0.1);
+		khsound::play_sound(khsound::SOUND_JUMP,0.3);
 	}
 	if (g_input.jumpPressed == false)
 	{
@@ -166,38 +195,48 @@ void FPSCharacter::PhysicUpdate(float dt)
 	tween.update(dt);
 	g_phyis.setVelocity(pawn, vel);
 }
+
+f32 random(f32 min, f32 max)
+{
+	f32 r = (rand()*1.0f) / RAND_MAX;
+	return min + (max - min)*r;
+}
+f32 ofset_rx=0;
 void FPSCharacter::Update(float dt)
 {
-
 	auto tr = g_phyis.getTransform(pawn);
+	tr.y += 23;//cetner to top 
 	
-	tr.y += 28;//cetner to top 
-			   //set node transform in h3d
-	float cx, cy, cz, rx, ry, rz, t;
-	h3dGetNodeTransform(camera, &cx, &cy, &cz, &rx, &ry, &rz, &t, &t, &t);
 	float cam_x = tr.x;
 	float cam_y = tr.y +cam_y_ofset + cam_y_ofset2;
 	float cam_z = tr.z;
 
 	float sens = 0.1;
-	// Look left/right
-	ry -= g_input.drx*sens;
-	// Loop up/down but only in a limited range
-	rx += g_input.dry*sens;
-	if (rx > 90) rx = 90;
-	if (rx < -90) rx = -90;
+	cam_ry -= g_input.drx*sens;// Look left/right
+	cam_rx += g_input.dry*sens;// Loop up/down but only in a limited range
+	if (cam_rx > 90) cam_rx = 90;
+	if (cam_rx < -90) cam_rx = -90;
 
-	
-
-	if (first_update)
+	float shake_x = 0, shake_y = 0;
+	if (shaking)
 	{
-		curr_y = cam_y;
-		first_update = false;
+		shake_x = random(-1, 1)*shaking_mag;
+		shake_y = random(-1, 1)*shaking_mag;
 	}
-	if(cam_y!=curr_y)
-		curr_y += ((cam_y - curr_y) >= 0 ? 1 : -1)*dt*100;
-	float zzrcx = 0;
-	if (current_moving_speed>1)
-		zzrcx = cam_rz;
-	h3dSetNodeTransform(camera, cam_x, cam_y, cam_z, rx, ry, /*zzrcx*/0, 1, 1, 1);
+	h3dSetNodeTransform(camera, cam_x, cam_y, cam_z, cam_rx+ ofset_rx, cam_ry, cam_rz+ shake_y, 1, 1, 1);
+
+
+	h3dSetResParamF(cammat, H3DMatRes::UniformElem, bloodMaskIndex, H3DMatRes::UnifValueF4, 0, bloodmask);
+}
+void FPSCharacter::onProjectileHit(Vector3df hit_pos)
+{
+	StartShake(1, 0.1f);
+	tween.removeByTag(113);
+	tween.callFuncPeriodic(0, 0.2, [](float x) {bloodmask = x; }, 0.05, EASING_FUNCTION::Linear,113);
+	tween.callFuncPeriodic(0.2, 0, [](float x) {bloodmask = x; }, 0.2, EASING_FUNCTION::Linear, 113,0.05);
+
+
+	tween.callFuncPeriodic(0, 2, [](float x) {ofset_rx = x; }, 1, EASING_FUNCTION::ElasticEaseOut, 113);
+	//tween.callFuncPeriodic(4, 0, [](float x) {ofset_rx = x; }, 0.1, EASING_FUNCTION::Linear, 113, 0.8);
+	
 }

@@ -9,6 +9,7 @@ sampler2D buf0 = sampler_state
 
 // Uniforms
 float hdrExposure = 2.0;       // Exposure (higher values make scene brighter)
+float bloodMask = 0;
 
 
 context BLUR
@@ -62,7 +63,9 @@ void main( void )
 uniform sampler2D buf0, buf1;
 uniform vec2 frameBufSize;
 uniform float hdrExposure;
+uniform float bloodMask;
 varying vec2 texCoords;
+
 
 vec3 ACESFilm(vec3 x)
 {
@@ -112,17 +115,11 @@ void main( void )
 	fcol = pow(fcol, vec3(1.0 / 2.2));
 	gl_FragColor.a = 1.0;
 	gl_FragColor.rgb =fcol;
-	// vec4 col0 = texture2D( buf0, texCoords );
-	// float brightness = dot(col0.rgb, vec3(1, 1, 1));
- //    if(brightness > 5)
- //        col0 = vec4(col0.rgb+col0.rgb, 1.0);
- //    else
-	// 	col0 = vec4(col0.rgb, 1.0);
+	vec3 bloodcol = gl_FragColor.rgb;
+	bloodcol.g *= 0.0;
+	bloodcol.b *= 0.0;
 
- //    vec3 fcol = ACESFitted(col0.rgb);
-	// fcol = pow(fcol, vec3(1.0 / 2.2));
-	// gl_FragColor.a = 1.0;
-	// gl_FragColor.rgb =fcol;
+	gl_FragColor.rgb = mix(gl_FragColor.rgb,bloodcol,bloodMask);
 
 }
 

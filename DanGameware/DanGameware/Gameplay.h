@@ -36,11 +36,13 @@ class FPSCharacter : public GameObject
 private:
 	Hndl pawn;
 	H3DNode camera;
+
 public:
 	FPSCharacter(H3DNode cam);
 	~FPSCharacter();
 	virtual void PhysicUpdate(float dt)override;
 	virtual void Update(float dt)override;
+	void onProjectileHit(Vector3df hit_pos);
 };
 
 class WeaponAxe :public GameObject

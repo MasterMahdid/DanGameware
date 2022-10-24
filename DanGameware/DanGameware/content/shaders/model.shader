@@ -482,25 +482,37 @@ void main( void )
 #ifdef _F05_AlphaTest
 	if( albedo.a < 0.01 ) discard;
 #endif
-	vec3 normal = tsbNormal;
-	float lighpow = 5.0;
+	
+	float lighpow = 10.0;
 	vec3 fcol = (max(light.rgb*lighpow,0.4))*albedo.rgb;
 	gl_FragColor.rgb =fcol;
+	
+
+	#ifdef _F02_NormalMapping
+		vec3 normalMap = texture2D( normalMap, newCoords.st ).rgb * 2.0 - 1.0;
+		vec3 normal = tsbMat * normalMap;
+	#else
+		vec3 normal = tsbNormal;
+	#endif
+
+
 #ifdef _F04_EnvMapping
 	vec3 refl = textureCube(envMap, reflect( pos.xyz - viewerPos, normalize( normal ) ) ).rgb;
 	refl = pow(refl,vec3(2.2));
-	gl_FragColor.rgb = (max(light.rgb*lighpow,0.5)+(refl*2.0*matspec))*albedo.rgb;
+	gl_FragColor.rgb =(max(light.rgb*lighpow,0.4)+refl*6*max(matspec,0.1))*albedo.rgb;
+	
+
 #endif
 	vec3 viewDir = viewerPos - pos.xyz;
 	//Fog parameters, could make them uniforms and pass them into the fragment shader
-	float fog_maxdist = 2500;
+	float fog_maxdist = 1800;
 	float fog_mindist = 100;
 	vec3  fog_colour = vec3(0.48, 0.44, 0.27);
 	// Calculate fog
 	float dist = length(viewDir);
 	float fog_factor = (fog_maxdist - dist)/(fog_maxdist - fog_mindist);
 	fog_factor = clamp(fog_factor, 0.0, 1.0);
+	fog_factor *= fog_factor;
 	gl_FragColor.rgb = mix(fog_colour, gl_FragColor.rgb, fog_factor);
 	
 }
-

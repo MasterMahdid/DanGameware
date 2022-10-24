@@ -82,7 +82,6 @@ void loadResourcesFromDisk(const char *contentDir,std::function<void()> update)
 }
 void mapPreload(const char* name, std::function<void()> update)
 {
-	const char* baseq3 = getenv("ALVAHSHI_BASEQ3");
 	const char* content_dir = getenv("ALVAHSHI_CONTENT");
 	
 	//2-load the new map
@@ -292,8 +291,8 @@ void addLight(Vector3df pos,Vector3df diff,float rad,float intensity)
 {
 	auto light = h3dAddLightNode(H3DRootNode, "Light1", 0, "LIGHTING", "SHADOWMAP");
 	h3dSetNodeTransform(light, pos.x, pos.y, pos.z, 0, 0, 0, 1, 1, 1);
-	h3dSetNodeParamF(light, H3DLight::FovF, 0, 90);
-	//h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
+	//h3dSetNodeParamF(light, H3DLight::FovF, 0, 90);
+	h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
 	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, rad);
 	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0, intensity);
 	h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 0);

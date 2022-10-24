@@ -165,20 +165,23 @@ bool isKeyDown(int key)
 	return glfwGetKey(_winHandle, key) == GLFW_PRESS;
 }
 
-H3DRes matres;
+std::vector<H3DRes> matres;
 int specunifind;
 void detectMaterials()
 {
 	H3DRes mat = 0;
+	matres.clear();
 	while (mat=h3dGetNextResource(H3DResTypes::Material, mat))
 	{
+		std::string nm = h3dGetResName(mat);
+		if (nm.find("models/statue/mat.material.xml") == std::string::npos)
+			continue;
 		auto m_samplerIndex = h3dFindResElem(mat, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "matSpecParams");
 		if (m_samplerIndex != -1)
 		{
 			printf("%d,%s\n", m_samplerIndex, h3dGetResName(mat));
 			specunifind = m_samplerIndex;
-			matres = mat;
-			break;
+			matres.push_back(mat);
 		}
 	}
 }
@@ -220,7 +223,7 @@ void initGame(int winWidth, int winHeight)
 
 
 	main_camera = h3dAddCameraNode(H3DRootNode, "Camera", pipeRes);
-	h3dSetNodeParamI(main_camera, H3DCamera::OccCullingI, 1);
+	//h3dSetNodeParamI(main_camera, H3DCamera::OccCullingI, 1);
 	h3dSetNodeParamI(main_camera, H3DCamera::ViewportWidthI, winWidth);
 	h3dSetNodeParamI(main_camera, H3DCamera::ViewportHeightI, winHeight);
 	h3dSetupCameraView(main_camera, 80.0f, (float)winWidth / winHeight, 1, 30000);
@@ -272,7 +275,7 @@ void gameRender()
 		h3dRender(main_camera);
 		h3dFinalizeFrame();
 		h3dClearOverlays();
-		debug_draw_frame(main_camera, false);
+		//debug_draw_frame(main_camera, false);
 	}
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -354,9 +357,11 @@ void mapLoadUpdate()
 void main_load_map()
 {
 	auto t1 = glfwGetTime();
-	mapLoad("esatwall", &mapLoadUpdate);
+	mapLoad("finalook", &mapLoadUpdate);
+	detectMaterials();
 	dw_console_log("map load time = %0.2f", glfwGetTime() - t1);
 }
+//h3dsetGlobalShaderUniform(const char* name,)
 int main(int argc, char** argv);
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
@@ -365,6 +370,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 int main(int argc, char** argv)
 {
 	//maadwawdin();
+	const char* baseq3 = getenv("ALVAHSHI_BASEQ3");
+	if (baseq3 == NULL)
+		putenv("ALVAHSHI_BASEQ3=./");
+	const char* alv_cotent = getenv("ALVAHSHI_CONTENT");
+	if (alv_cotent == NULL)
+		putenv("ALVAHSHI_CONTENT=./content/");
+	
 	init();
 	initGame(WINDOW_WIDTH, WINDOW_HEIGHT);
 	debug_draw_init();
@@ -457,24 +469,37 @@ void alve_editor_draw_light_controls(H3DNode light, bool& out_select_closest_lig
 }
 void alve_editor_draw_material_controls()
 {
+	
 	ImGui::Begin("Material Params");
-
+	if (matres.size() == 0);
+	{
+		ImGui::Text("No material selected");
+		ImGui::End();
+		return;
+	}
 	float colx, coly, colz,colw;
-	colx = h3dGetResParamF(matres, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 0);
-	coly = h3dGetResParamF(matres, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 1);
-	colz = h3dGetResParamF(matres, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 2);
-	colw = h3dGetResParamF(matres, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 3);
+	colx = h3dGetResParamF(matres[0], H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 0);
+	coly = h3dGetResParamF(matres[0], H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 1);
+	colz = h3dGetResParamF(matres[0], H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 2);
+	colw = h3dGetResParamF(matres[0], H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 3);
 	float col[3] = { colx,coly,colz };
 	ImGui::ColorEdit3("Diffuse color", col);
 	ImGui::DragFloat("Light intensity", &colw, 0.01);
-	h3dSetResParamF(matres, H3DMatRes::UniformElem, specunifind,H3DMatRes::UnifValueF4, 0, col[0]);
-	h3dSetResParamF(matres, H3DMatRes::UniformElem, specunifind,H3DMatRes::UnifValueF4, 1, col[1]);
-	h3dSetResParamF(matres, H3DMatRes::UniformElem, specunifind,H3DMatRes::UnifValueF4, 2, col[2]);
-	h3dSetResParamF(matres, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 3, colw);
+	for (auto& mt : matres)
+	{
+		h3dSetResParamF(mt, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 0, col[0]);
+		h3dSetResParamF(mt, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 1, col[1]);
+		h3dSetResParamF(mt, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 2, col[2]);
+		h3dSetResParamF(mt, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 3, colw);
+	}
+	
 
 
 	ImGui::End();
 }
+f32 tttime;
+int framescouint=0;
+int last_fps = 0;
 void imgui_stats_window()
 {
 	float frame_time = h3dGetStat(H3DStats::FrameTime, true);
@@ -483,7 +508,14 @@ void imgui_stats_window()
 	float light_count = h3dGetStat(H3DStats::LightPassCount, true);
 	float texturemem = h3dGetStat(H3DStats::TextureVMem, false);
 	float geometry_mem = h3dGetStat(H3DStats::GeometryVMem, false);
-	int frame_rate = 1000 / frame_time;
+	tttime += frame_time;
+	framescouint++;
+	if (tttime > 100)
+	{
+		tttime -= 100;
+		last_fps = framescouint*10;
+		framescouint = 0;
+	}
 
 
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
@@ -494,10 +526,10 @@ void imgui_stats_window()
 	window_pos_pivot.y = 0;
 	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
 	window_flags |= ImGuiWindowFlags_NoMove;
-	ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+	ImGui::SetNextWindowBgAlpha(0.6f); // Transparent background
 	bool pop = true;
 	ImGui::Begin("Stats", &pop, window_flags);
-	ImGui::Text("%d FPS (%d Batches,%d Lights)", frame_rate, (int)batch_count, (int)light_count);
+	ImGui::Text("%d FPS (%d Batches,%d Lights)", last_fps, (int)batch_count, (int)light_count);
 	ImGui::Text("%d Triangles",(int)tri_count);
 	ImGui::Text("%d MB Textures,%d MB Models", (int)texturemem, (int)geometry_mem);
 
@@ -517,7 +549,7 @@ void imgui_frame()
 	if (edit_mode)
 	{
 		//ImGui::ShowDemoWindow();
-		//alve_editor_draw_material_controls();
+		alve_editor_draw_material_controls();
 		khshowConsole();
 		bool select_closest_light = false;
 		if (dynamic_lights.size() > 0)
