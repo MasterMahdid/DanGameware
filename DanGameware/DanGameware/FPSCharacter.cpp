@@ -6,6 +6,8 @@
 #include "debug_draw.h"
 void dw_console_log(const char* fmt, ...);
 extern gentity_t g_entities;
+int player_health = 100;
+bool playerDead = false;
 namespace fpscharacter_internal
 {
 	Tween tween;
@@ -84,12 +86,20 @@ void FPSCharacter::PhysicUpdate(float dt)
 {
 	float rx, ry, rz, t;
 	h3dGetNodeTransform(camera, &t, &t, &t, &rx, &ry, &rz, &t, &t, &t);
-
-	damp_speed_x = SmoothDamp(damp_speed_x, g_input.dx, damp_speed_x_vel, 0.1, 400, dt);
+	float st = 0.1;
+	if (playerDead)
+	{
+		g_input.dx = g_input.dy = 0;
+		g_input.attack = false;
+		g_input.jumpPressed = false;
+		g_input.drx = g_input.dry = 0;
+		st = 0.5;
+	}
+	damp_speed_x = SmoothDamp(damp_speed_x, g_input.dx, damp_speed_x_vel, st, 400, dt);
 	if (abs(damp_speed_x) < 0.0001)
 		damp_speed_x = 0;
 
-	damp_speed_y = SmoothDamp(damp_speed_y, g_input.dy, damp_speed_y_vel, 0.1, 400, dt);
+	damp_speed_y = SmoothDamp(damp_speed_y, g_input.dy, damp_speed_y_vel, st, 400, dt);
 	if (abs(damp_speed_y) < 0.0001)
 		damp_speed_y = 0;
 
@@ -107,9 +117,9 @@ void FPSCharacter::PhysicUpdate(float dt)
 	}
 	if (g_input.attack&& allow_attack)
 	{
-		//g_weapon_axe->attack();
-		onProjectileHit(Vector3df());
-		allow_attack = false;
+		g_weapon_axe->attack();
+		//onProjectileHit(Vector3df());
+		//allow_attack = false;
 	}
 	if (!g_input.attack)
 	{
@@ -201,42 +211,64 @@ f32 random(f32 min, f32 max)
 	f32 r = (rand()*1.0f) / RAND_MAX;
 	return min + (max - min)*r;
 }
-f32 ofset_rx=0;
+f32 ofset_rx = 0, ofset_rz = 0;
+f32 head_height = 23;
 void FPSCharacter::Update(float dt)
 {
 	auto tr = g_phyis.getTransform(pawn);
-	tr.y += 23;//cetner to top 
-	
+	tr.y += head_height;//cetner to top 
 	float cam_x = tr.x;
-	float cam_y = tr.y +cam_y_ofset + cam_y_ofset2;
+	float cam_y = tr.y;
 	float cam_z = tr.z;
-
-	float sens = 0.1;
-	cam_ry -= g_input.drx*sens;// Look left/right
-	cam_rx += g_input.dry*sens;// Loop up/down but only in a limited range
-	if (cam_rx > 90) cam_rx = 90;
-	if (cam_rx < -90) cam_rx = -90;
-
+	
+	if (!playerDead)
+	{
+		cam_y = cam_y + cam_y_ofset + cam_y_ofset2;
+		float sens = 0.1;
+		cam_ry -= g_input.drx*sens;// Look left/right
+		cam_rx += g_input.dry*sens;// Loop up/down but only in a limited range
+		if (cam_rx > 90) cam_rx = 90;
+		if (cam_rx < -90) cam_rx = -90;
+	}
+	
 	float shake_x = 0, shake_y = 0;
 	if (shaking)
 	{
 		shake_x = random(-1, 1)*shaking_mag;
 		shake_y = random(-1, 1)*shaking_mag;
 	}
-	h3dSetNodeTransform(camera, cam_x, cam_y, cam_z, cam_rx+ ofset_rx, cam_ry, cam_rz+ shake_y, 1, 1, 1);
 
-
+	h3dSetNodeTransform(camera, cam_x, cam_y, cam_z, cam_rx+ ofset_rx, cam_ry, cam_rz+ shake_y+ ofset_rz, 1, 1, 1);
 	h3dSetResParamF(cammat, H3DMatRes::UniformElem, bloodMaskIndex, H3DMatRes::UnifValueF4, 0, bloodmask);
 }
 void FPSCharacter::onProjectileHit(Vector3df hit_pos)
 {
-	StartShake(1, 0.1f);
-	tween.removeByTag(113);
-	tween.callFuncPeriodic(0, 0.2, [](float x) {bloodmask = x; }, 0.05, EASING_FUNCTION::Linear,113);
-	tween.callFuncPeriodic(0.2, 0, [](float x) {bloodmask = x; }, 0.2, EASING_FUNCTION::Linear, 113,0.05);
+	if (playerDead)
+		return;
+	
+
+	player_health -= random(3,8);
+	if (player_health <= 0)
+	{
+		playerDead = true;
+		tween.removeByTag(113);
+		tween.callFuncPeriodic(0, 2, [](float x) {bloodmask = x; }, 0.3, EASING_FUNCTION::Linear);
+		tween.callFuncPeriodic(0, 10, [](float x) {ofset_rz = x; },1, EASING_FUNCTION::Linear);
+		tween.callFuncPeriodic(head_height, -23, [](float x) {head_height = x; }, 1, EASING_FUNCTION::BounceEaseOut);
+		g_weapon_axe->death();
+
+	}
+	else
+	{
+		StartShake(1, 0.1f);
+		tween.removeByTag(113);
+		tween.callFuncPeriodic(0, 0.2, [](float x) {bloodmask = x; }, 0.05, EASING_FUNCTION::Linear, 113);
+		tween.callFuncPeriodic(0.2, 0, [](float x) {bloodmask = x; }, 0.2, EASING_FUNCTION::Linear, 113, 0.05);
 
 
-	tween.callFuncPeriodic(0, 2, [](float x) {ofset_rx = x; }, 1, EASING_FUNCTION::ElasticEaseOut, 113);
-	//tween.callFuncPeriodic(4, 0, [](float x) {ofset_rx = x; }, 0.1, EASING_FUNCTION::Linear, 113, 0.8);
+		tween.callFuncPeriodic(0, 2, [](float x) {ofset_rx = x; }, 1, EASING_FUNCTION::ElasticEaseOut, 113);
+		//tween.callFuncPeriodic(4, 0, [](float x) {ofset_rx = x; }, 0.1, EASING_FUNCTION::Linear, 113, 0.8);
+	}
+
 	
 }

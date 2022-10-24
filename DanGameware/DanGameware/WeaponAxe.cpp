@@ -113,6 +113,12 @@ void WeaponAxe::land()
 	//tweener.removeByTag(2221);
 	
 }
+void WeaponAxe::death()
+{
+	//tweener.removeByTag(2221);
+	h3dRemoveNode(this->modelNode);
+
+}
 ProjectileAxe::ProjectileAxe()
 {
 	projectile = h3dAddNodes(H3DRootNode, axe_pr);

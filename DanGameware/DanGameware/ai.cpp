@@ -117,7 +117,7 @@ void think_run(gentity_t self)
 	move_dir.y = 0;
 	self->movedir = move_dir.normalize();
 	self->speed = 100;
-	if (range == Range::RANGE_MELLEE)
+	/*if (range == Range::RANGE_MELLEE)
 	{
 		self->think = &think_melee;
 		self->nextthink = 1;
@@ -128,10 +128,10 @@ void think_run(gentity_t self)
 		self->think = think_run;//get closer
 		self->nextthink = 0.1;
 	}
-	else if (range == Range::RANGE_MID || range == Range::RANGE_FAR)
+	else if (range == Range::RANGE_MID || range == Range::RANGE_FAR)*/
 	{
 		float ran = (rand()*1.0f) / RAND_MAX;
-		if (canShoot(self, self->enemy) && ran>0.2f)
+		if (canShoot(self, self->enemy) && ran>0.8f)
 		{
 			self->think = &think_shoot;
 			self->nextthink = 0.3;
@@ -149,11 +149,11 @@ void think_stand(gentity_t self)
 	if (findTarget(self))
 	{
 		self->think = &think_run;
-		self->nextthink = 0.1;
+		self->nextthink = 0.3;
 	}
 	else
 	{
-		self->nextthink = 0.1;
+		self->nextthink = 0.3;
 	}
 }
 

@@ -60,6 +60,7 @@ public:
 	void attack();
 	void jump();
 	void land();
+	void death();
 };
 class ProjectileAxe :public GameObject
 {

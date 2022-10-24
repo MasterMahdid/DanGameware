@@ -118,6 +118,7 @@ void main( void )
 	vec3 bloodcol = gl_FragColor.rgb;
 	bloodcol.g *= 0.0;
 	bloodcol.b *= 0.0;
+	bloodcol.r = clamp(bloodcol.r-0.1,0.0,1.0);
 
 	gl_FragColor.rgb = mix(gl_FragColor.rgb,bloodcol,bloodMask);
 

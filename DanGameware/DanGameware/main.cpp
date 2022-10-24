@@ -43,6 +43,8 @@ gentity_t g_entities = nullptr;
 bool game_pause = false;
 H3DRes background_mat;
 
+extern int player_health;
+
 GLFWwindow* _winHandle;
 float prev_x = 0;
 float prev_y = 0;
@@ -519,21 +521,38 @@ void imgui_stats_window()
 
 
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-	ImVec2 window_pos, window_pos_pivot;
-	window_pos.x = 10;
-	window_pos.y = 10;
-	window_pos_pivot.x = 0;
-	window_pos_pivot.y = 0;
-	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
-	window_flags |= ImGuiWindowFlags_NoMove;
-	ImGui::SetNextWindowBgAlpha(0.6f); // Transparent background
-	bool pop = true;
-	ImGui::Begin("Stats", &pop, window_flags);
-	ImGui::Text("%d FPS (%d Batches,%d Lights)", last_fps, (int)batch_count, (int)light_count);
-	ImGui::Text("%d Triangles",(int)tri_count);
-	ImGui::Text("%d MB Textures,%d MB Models", (int)texturemem, (int)geometry_mem);
-
-	ImGui::End();
+	{
+		ImVec2 window_pos, window_pos_pivot;
+		window_pos.x = 10;
+		window_pos.y = 10;
+		window_pos_pivot.x = 0;
+		window_pos_pivot.y = 0;
+		ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+		window_flags |= ImGuiWindowFlags_NoMove;
+		ImGui::SetNextWindowBgAlpha(0.6f); // Transparent background
+		bool pop = true;
+		ImGui::Begin("Stats", &pop, window_flags);
+		ImGui::Text("%d FPS (%d Batches,%d Lights)", last_fps, (int)batch_count, (int)light_count);
+		ImGui::Text("%d Triangles", (int)tri_count);
+		ImGui::Text("%d MB Textures,%d MB Models", (int)texturemem, (int)geometry_mem);
+		ImGui::End();
+	}
+	
+	{
+		bool pop = true;
+		ImVec2 window_pos, window_pos_pivot;
+		window_pos.x = 10;
+		window_pos.y = 90;
+		window_pos_pivot.x = 0;
+		window_pos_pivot.y = 0;
+		ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+		ImGui::SetNextWindowBgAlpha(0.6f); // Transparent background
+		ImGui::Begin("Player", &pop, window_flags);
+		int ss = player_health;
+		ImGui::Text("Health = %d", ss);
+		ImGui::End();
+	}
+	
 }
 void khshowConsole();
 void imgui_frame()
