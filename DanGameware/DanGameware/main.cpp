@@ -474,7 +474,7 @@ void alve_editor_draw_material_controls()
 {
 	
 	ImGui::Begin("Material Params");
-	if (matres.size() == 0);
+	if (matres.size() == 0)
 	{
 		ImGui::Text("No material selected");
 		ImGui::End();
