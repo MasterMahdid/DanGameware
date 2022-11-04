@@ -335,10 +335,27 @@ void physicEngine::update(float dt)
 		{
 			p->FallingVelocity.set(0, 0, 0);
 		}
-		
-		p->x = CollisionResultPosition.x;
-		p->y = CollisionResultPosition.y;
-		p->z = CollisionResultPosition.z;
+		bool dont_move = false;
+		for (const auto& p2 : pawns)
+		{
+			if (p2 == p)
+				continue;
+			Vector3df p2pos(p2->x, p2->y, p2->z);
+			f32 r2 = (p2->rx + p->rx);
+			r2 *= r2;
+			if ((p2pos - CollisionResultPosition).getLengthSQ() < r2)
+			{
+				dont_move = true;
+				break;
+			}
+		}
+		if (!dont_move)
+		{
+			p->x = CollisionResultPosition.x;
+			p->y = CollisionResultPosition.y;
+			p->z = CollisionResultPosition.z;
+		}
+
 		p->grounded = !falling;
 	}
 	Triangle tlist[256];
