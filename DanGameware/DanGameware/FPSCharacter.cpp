@@ -2,7 +2,7 @@
 #include "Tween.h"
 #include "khmath.h"
 #include "SoundEngine.h"
-#include "debug_draw.h"
+//#include "debug_draw.h"
 void dw_console_log(const char* fmt, ...);
 gentity_t player_ent;
 int player_health = 100;
@@ -49,16 +49,16 @@ FPSCharacter::FPSCharacter(H3DNode cam,gentity_t ent)
 	ent->speed = 0;
 	ent->movedir = Vector3df();
 	::player_ent = ent;
-	/*auto light = h3dAddLightNode(cam, "Light1", 0, "LIGHTING", "SHADOWMAP");
-	h3dSetNodeTransform(light, 0, 0, 0, 0, 0, 0, 1, 1, 1);
+	auto light = h3dAddLightNode(cam, "Light1", 0, "LIGHTING", "SHADOWMAP");
+	h3dSetNodeTransform(light, 0, 0, 0, -86, 0, 0, 1, 1, 1);
 	h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
-	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, 300);
-	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0,0);
+	h3dSetNodeParamF(light, H3DLight::RadiusF, 0,200);
+	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0,0.25);
 	h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 0);
 	h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, 0.003f);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 0, 1);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, 0.75);
-	h3dSetNodeParamF(light, H3DLight::ColorF3, 2,0.50);*/
+	h3dSetNodeParamF(light, H3DLight::ColorF3, 2,0.50);
 	detectMat();
 	//tween.callFuncPeriodic(0, 1, [](float x) {bloodmask = x; }, 0.4615 / 2, EASING_FUNCTION::Linear, 0, 0, 0, true);
 }
@@ -145,7 +145,7 @@ void FPSCharacter::PhysicUpdate(float dt)
 	{
 		falling_time += dt;
 	}
-	if ((tr.grounded || true)&&g_input.jumpPressed && allow_jump)
+	if ((tr.grounded)&&g_input.jumpPressed && allow_jump)
 	{	
 		g_phyis.pawnJump(pawn, 270);
 		allow_jump = false;
@@ -241,9 +241,11 @@ void FPSCharacter::Update(float dt)
 		shake_x = random(-1, 1)*shaking_mag;
 		shake_y = random(-1, 1)*shaking_mag;
 	}
-
-	h3dSetNodeTransform(camera, cam_x, cam_y, cam_z, cam_rx+ ofset_rx, cam_ry, cam_rz+ shake_y+ ofset_rz, 1, 1, 1);
+	if (!flyCamEnabled)
+		h3dSetNodeTransform(camera, cam_x, cam_y, cam_z, cam_rx+ ofset_rx, cam_ry, cam_rz+ shake_y+ ofset_rz, 1, 1, 1);
 	h3dSetResParamF(cammat, H3DMatRes::UniformElem, bloodMaskIndex, H3DMatRes::UnifValueF4, 0, bloodmask);
+
+	//dd_sphere(Vector3df(), 200, DD_RED);
 }
 void FPSCharacter::onProjectileHit(Vector3df hit_pos)
 {
@@ -251,7 +253,7 @@ void FPSCharacter::onProjectileHit(Vector3df hit_pos)
 		return;
 	
 
-	player_health -= random(8,15);
+	player_health -= random(4,8);
 	if (player_health <= 0)
 	{
 		playerDead = true;
@@ -264,15 +266,23 @@ void FPSCharacter::onProjectileHit(Vector3df hit_pos)
 	}
 	else
 	{
-		StartShake(1, 0.1f);
+		StartShake(3, 0.15f);
 		tween.removeByTag(113);
-		tween.callFuncPeriodic(0, 0.2, [](float x) {bloodmask = x; }, 0.05, EASING_FUNCTION::Linear, 113);
-		tween.callFuncPeriodic(0.2, 0, [](float x) {bloodmask = x; }, 0.2, EASING_FUNCTION::Linear, 113, 0.05);
+		tween.callFuncPeriodic(0, 0.7, [](float x) {bloodmask = x; }, 0.05, EASING_FUNCTION::Linear, 113);
+		tween.callFuncPeriodic(0.7, 0, [](float x) {bloodmask = x; }, 0.2, EASING_FUNCTION::Linear, 113, 0.05);
 
 
-		tween.callFuncPeriodic(0, 4, [](float x) {ofset_rx = x; }, 1, EASING_FUNCTION::ElasticEaseOut, 113);
+		tween.callFuncPeriodic(0, 8, [](float x) {ofset_rx = x; }, 1, EASING_FUNCTION::ElasticEaseOut, 113);
 		//tween.callFuncPeriodic(4, 0, [](float x) {ofset_rx = x; }, 0.1, EASING_FUNCTION::Linear, 113, 0.8);
 	}
 
 	
+}
+
+void FPSCharacter::shootCamAnim()
+{
+	ofset_rx = 0;
+	tween.callFuncPeriodic(0, 6, [](float x) {ofset_rx = x; }, 0.35, EASING_FUNCTION::CircularEaseIn,666,0);
+	tween.callFuncPeriodic(6, 0, [](float x) {ofset_rx = x; }, 0.9, EASING_FUNCTION::ElasticEaseOut, 666,0.35);
+
 }

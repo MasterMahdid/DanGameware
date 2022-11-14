@@ -41,7 +41,7 @@ namespace khsound
 		update();
 		loadSnd("sounds\\sfx\\footstep\\footstep6.wav", SOUND_FOOTSTEP_6);
 		update();
-		loadSnd("sounds\\music\\e1m1.mp3", E1M1_MUSIC);
+		loadSnd("sounds\\music\\e1m3.mp3", E1M1_MUSIC);
 		update();
 		loadSnd("sounds\\sfx\\jump.mp3", SOUND_JUMP);
 		update();

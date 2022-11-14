@@ -22,6 +22,7 @@ public:
 	void loadLevel(float* tri_data,size_t tri_count);
 	void update(float dt);
 	Hndl createPawn(float radius, float height, float *pos,void* userdata=nullptr, u32 flags=0);
+	void removePawn(Hndl pawn);
 	Hndl createSphereProjectile(float radius, float *pos,std::function<void(const contanctInfo&)> callback,Hndl ignore_pawn);
 	void setProjectilePosition(Hndl proj, Vector3df pos);
 	void setVelocity(Hndl, float* velocity);

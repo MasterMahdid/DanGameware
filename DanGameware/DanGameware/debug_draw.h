@@ -1,6 +1,17 @@
 #pragma once
 #include "khmath.h"
 #include "Horde3D.h"
+
+#define DD_RED (Vector3df(1,0,0))
+#define DD_BLUE (Vector3df(0,0,1))
+#define DD_BLACK (Vector3df(0,0,0))
+#define DD_GREEN (Vector3df(0,1,0))
+#define DD_WHITE (Vector3df(1,1,1))
+#define DD_YELLOW (Vector3df(1,1,0))
+#define DD_PURPLE (Vector3df(1,0,1))
+#define DD_FIRUZ (Vector3df(0,1,1))
+
+
 void debug_draw_init();
 void debug_draw_frame(H3DNode camera, bool depth_test);
 void debug_draw_imgui(H3DNode camera);

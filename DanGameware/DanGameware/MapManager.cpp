@@ -223,7 +223,7 @@ void mapLoad(const char* name, std::function<void()> update)
 	add_light_from_map(mapfn);
 	add_player_from_map(mapfn);
 	add_enemy_from_map(mapfn);
-	//khsound::play_sound(khsound::E1M1_MUSIC,0.6f);
+	khsound::play_sound(khsound::E1M1_MUSIC,1);
 }
 std::string map_find_ent_prop_in_string(const char* key, const std::string& str, size_t start, size_t end)
 {
@@ -266,15 +266,24 @@ Vector3df map_get_end_prop_value_as_color(std::string value)
 
 	return Vector3df(xx, yy, zz);
 }
-void addLight(Vector3df pos,Vector3df diff,float rad,float intensity)
+void addLight(Vector3df pos,Vector3df diff,float rad,float intensity,bool shadow)
 {
 	auto light = h3dAddLightNode(H3DRootNode, "Light1", 0, "LIGHTING", "SHADOWMAP");
-	h3dSetNodeTransform(light, pos.x, pos.y, pos.z, 0, 0, 0, 1, 1, 1);
-	//h3dSetNodeParamF(light, H3DLight::FovF, 0, 90);
 	h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
 	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, rad);
 	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0, intensity);
-	h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 0);
+	if(shadow)
+	{
+		h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 3);
+		h3dSetNodeParamF(light, H3DLight::FovF, 0, 90);
+		h3dSetNodeTransform(light, pos.x, pos.y, pos.z, -52, -165, 0, 1, 1, 1);
+	}
+	else
+	{
+		h3dSetNodeTransform(light, pos.x, pos.y, pos.z, 0, -86, 0, 1, 1, 1);
+		h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
+	}
+	
 	h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, 0.003f);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 0, diff.x);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, diff.y);
@@ -320,7 +329,17 @@ int add_light_from_map(const char* filename)
 		{
 			intensity = std::atof(temp_str.c_str());
 		}
-		addLight(pos,diff,radius, intensity);
+
+		bool shadow = false;
+		temp_str = map_find_ent_prop_in_string("fog_power", str, of, of_end);
+		if (temp_str != "")
+		{
+			f32 fog_power = std::atof(temp_str.c_str());
+			if (fog_power > 4)
+				shadow = true;
+		}
+
+		addLight(pos,diff,radius, intensity,shadow);
 		lind++;
 		if (512 == lind)
 			break;
@@ -345,8 +364,10 @@ int add_player_from_map(const char* filename)
 		h3dSetNodeTransform(main_camera, pos.x, pos.y, pos.z, 1, 90, 1, 1, 1, 1);
 		auto pp = new FPSCharacter(main_camera,&g_entities[g_entities_len++]);
 		gameObjects_array.push_back(pp);
-		/*auto flycam = new flyThroughCam(main_camera);
-		gameObjects_array.push_back(flycam);*/
+		::fpsCharacter = pp;
+		auto flycam = new flyThroughCam(main_camera);
+		::flyCam = flycam;
+		gameObjects_array.push_back(flycam);
 
 		break;
 	}
@@ -368,6 +389,14 @@ int add_enemy_from_map(const char* filename)
 		auto pos = map_get_end_prop_value_as_position(temp_str);
 		auto ent = &g_entities[g_entities_len++];
 		ent->pos1 = pos;
+
+		temp_str = map_find_ent_prop_in_string("angle", str, of, of_end);
+		ent->angle = 0;
+		if (temp_str != "")
+		{
+			ent->angle = std::atof(temp_str.c_str());
+		}
+		ent->angle -= 90;
 		auto emn = new Enemy(ent);
 		gameObjects_array.push_back(emn);
 	}

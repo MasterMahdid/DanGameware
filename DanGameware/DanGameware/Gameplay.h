@@ -8,7 +8,11 @@
 
 const u32 PAWN_FLAG_ENEMY = 1;
 const u32 PAWN_FLAG_PLAYER = 2;
-
+class flyThroughCam;
+class FPSCharacter;
+extern bool flyCamEnabled;
+extern flyThroughCam* flyCam;
+extern FPSCharacter* fpsCharacter;
 struct GLFWwindow;
 struct playerInput
 {
@@ -45,6 +49,7 @@ public:
 	virtual void PhysicUpdate(float dt)override;
 	virtual void Update(float dt)override;
 	void onProjectileHit(Vector3df hit_pos);
+	void shootCamAnim();
 };
 
 class WeaponAxe :public GameObject

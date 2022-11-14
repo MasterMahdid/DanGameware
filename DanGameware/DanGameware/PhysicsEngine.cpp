@@ -252,6 +252,7 @@ struct Pawn
 	bool Falling;
 	void* user_data;
 	u32 flags;
+	bool dead;
 	Pawn()
 	{
 		FirstUpdate = true;
@@ -287,8 +288,13 @@ Hndl physicEngine::createPawn(float radius, float height, float *pos,void* userd
 	p.vz = 0;
 	p.user_data = userdata;
 	p.flags = flags;
+	p.dead = false;
 	pawns.push_back(pw);
 	return pawns.size() - 1;
+}
+void physicEngine::removePawn(Hndl pawn)
+{
+	pawns[pawn]->dead = true;
 }
 Hndl physicEngine::createSphereProjectile(float radius, float *pos, std::function<void(const contanctInfo&)> callback,Hndl ignore_pawn)
 {
@@ -307,6 +313,8 @@ void physicEngine::update(float dt)
 {
 	for (const auto& p : pawns)
 	{
+		if (p->dead)
+			continue;
 		Vector3df pos(p->x, p->y, p->z);
 		Vector3df rad(p->rx, p->ry, p->rz);
 		Vector3df vel(p->vx, p->vy, p->vz);
@@ -338,6 +346,8 @@ void physicEngine::update(float dt)
 		bool dont_move = false;
 		for (const auto& p2 : pawns)
 		{
+			if (p2->dead)
+				continue;
 			if (p2 == p)
 				continue;
 			Vector3df p2pos(p2->x, p2->y, p2->z);
@@ -395,6 +405,8 @@ void physicEngine::update(float dt)
 			if (sc->ignorePawn == i)
 				continue;
 			auto p = pawns[i];
+			if (p->dead)
+				continue;
 			Vector3df pos(p->x, p->y, p->z);
 			auto rr = Vector3df(0, p->ry, 0);
 			contanctInfo ci;

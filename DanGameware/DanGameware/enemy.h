@@ -7,13 +7,17 @@ private:
 	Hndl pawn;
 	H3DNode node;
 	Vector3d<f32> velocity;
+	float animrandomofset;
 	float animTime;
+	float hittime;
 	float walkAnimTime;
 	float deathAnimTime;
 	float idle_walk_fade;
 	bool walking;
 	bool alive;
+	float health;
 	gentity_t ent;
+	Vector3df impulseVel;
 public:
 	Enemy(gentity_t _ent);
 	~Enemy();

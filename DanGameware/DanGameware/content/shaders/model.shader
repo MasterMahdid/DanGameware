@@ -67,11 +67,6 @@ float4 matSpecParams <
 > = {0.04, 0.04, 0.04, 0.35};
 
 // Contexts
-context ATTRIBPASS
-{
-	VertexShader = compile GLSL VS_GENERAL;
-	PixelShader = compile GLSL FS_ATTRIBPASS;
-}
 
 context SHADOWMAP
 {
@@ -186,82 +181,6 @@ void main( void )
 }
 
 
-[[FS_ATTRIBPASS]]
-// =================================================================================================
-
-#ifdef _F03_ParallaxMapping
-	#define _F02_NormalMapping
-#endif
-
-#include "shaders/utilityLib/fragDeferredWrite.glsl" 
-
-uniform vec3 viewerPos;
-uniform vec4 matDiffuseCol;
-uniform vec4 matSpecParams;
-uniform sampler2D albedoMap;
-
-#ifdef _F02_NormalMapping
-	uniform sampler2D normalMap;
-#endif
-
-varying vec4 pos;
-varying vec2 texCoords;
-
-#ifdef _F02_NormalMapping
-	varying mat3 tsbMat;
-#else
-	varying vec3 tsbNormal;
-#endif
-#ifdef _F03_ParallaxMapping
-	varying vec3 eyeTS;
-#endif
-
-void main( void )
-{
-	vec3 newCoords = vec3( texCoords, 0 );
-	
-#ifdef _F03_ParallaxMapping	
-	const float plxScale = 0.03;
-	const float plxBias = -0.015;
-	
-	// Iterative parallax mapping
-	vec3 eye = normalize( eyeTS );
-	for( int i = 0; i < 4; ++i )
-	{
-		vec4 nmap = texture2D( normalMap, newCoords.st * vec2( 1, -1 ) );
-		float height = nmap.a * plxScale + plxBias;
-		newCoords += (height - newCoords.p) * nmap.z * eye;
-	}
-#endif
-
-	// Flip texture vertically to match the GL coordinate system
-	//newCoords.t *= -1.0;
-
-	vec4 albedo = texture2D( albedoMap, newCoords.st ) * matDiffuseCol;
-	
-#ifdef _F05_AlphaTest
-	if( albedo.a < 0.01 ) discard;
-#endif
-	
-#ifdef _F02_NormalMapping
-	vec3 normalMap = texture2D( normalMap, newCoords.st ).rgb * 2.0 - 1.0;
-	vec3 normal = tsbMat * normalMap;
-#else
-	vec3 normal = tsbNormal;
-#endif
-
-	vec3 newPos = pos.xyz;
-
-#ifdef _F03_ParallaxMapping
-	newPos += vec3( 0.0, newCoords.p, 0.0 );
-#endif
-	
-	setMatID( 1.0 );
-	setPos( newPos - viewerPos );
-	setNormal( normalize( normal ) );
-	setAlbedo( albedo.rgb );
-	setSpecParams( matSpecParams.rgb, matSpecParams.a );
-}
 
 [[VS_SHADOWMAP]]
 // =================================================================================================
@@ -356,6 +275,8 @@ varying vec2 texCoords2;
 #ifdef _F03_ParallaxMapping
 	varying vec3 eyeTS;
 #endif
+float normalmaptiling=1;
+
 
 void main( void )
 {
@@ -369,7 +290,7 @@ void main( void )
 	vec3 eye = normalize( eyeTS );
 	for( int i = 0; i < 4; ++i )
 	{
-		vec4 nmap = texture2D( normalMap, newCoords.st * vec2( 1, -1 ) );
+		vec4 nmap = texture2D( normalMap, newCoords.st * vec2( 1, -1 )*normalmaptiling );
 		float height = nmap.a * plxScale + plxBias;
 		newCoords += (height - newCoords.p) * nmap.z * eye;
 	}
@@ -385,7 +306,7 @@ void main( void )
 #endif
 	
 #ifdef _F02_NormalMapping
-	vec3 normalMap = texture2D( normalMap, newCoords.st ).rgb * 2.0 - 1.0;
+	vec3 normalMap = texture2D( normalMap, newCoords.st *normalmaptiling).rgb * 2.0 - 1.0;
 	vec3 normal = tsbMat * normalMap;
 #else
 	vec3 normal = tsbNormal;
@@ -448,6 +369,7 @@ uniform mat4 viewMat;
 #endif
 
 
+float normalmaptiling=1;
 
 
 void main( void )
@@ -483,13 +405,13 @@ void main( void )
 	if( albedo.a < 0.01 ) discard;
 #endif
 	
-	float lighpow = 10.0;
-	vec3 fcol = (max(light.rgb*lighpow,0.4))*albedo.rgb;
+	float lighpow = 1.0;
+	vec3 fcol = (max(light.rgb*lighpow,0.0))*albedo.rgb;
 	gl_FragColor.rgb =fcol;
 	
 
 	#ifdef _F02_NormalMapping
-		vec3 normalMap = texture2D( normalMap, newCoords.st ).rgb * 2.0 - 1.0;
+		vec3 normalMap = texture2D( normalMap, newCoords.st*normalmaptiling ).rgb * 2.0 - 1.0;
 		vec3 normal = tsbMat * normalMap;
 	#else
 		vec3 normal = tsbNormal;
@@ -499,20 +421,21 @@ void main( void )
 #ifdef _F04_EnvMapping
 	vec3 refl = textureCube(envMap, reflect( pos.xyz - viewerPos, normalize( normal ) ) ).rgb;
 	refl = pow(refl,vec3(2.2));
-	gl_FragColor.rgb =(max(light.rgb*lighpow,0.4)+refl*6*max(matspec,0.1))*albedo.rgb;
+	//gl_FragColor.rgb =(max(light.rgb*lighpow,0.4)+refl*6*max(matspec,0.1))*albedo.rgb;
+	gl_FragColor.rgb +=refl*matspec*1;
 	
 
 #endif
 	vec3 viewDir = viewerPos - pos.xyz;
 	//Fog parameters, could make them uniforms and pass them into the fragment shader
-	float fog_maxdist = 1800;
-	float fog_mindist = 100;
+	float fog_maxdist = 10000;
+	float fog_mindist = 800;
 	vec3  fog_colour = vec3(0.48, 0.44, 0.27);
 	// Calculate fog
 	float dist = length(viewDir);
 	float fog_factor = (fog_maxdist - dist)/(fog_maxdist - fog_mindist);
 	fog_factor = clamp(fog_factor, 0.0, 1.0);
 	fog_factor *= fog_factor;
-	gl_FragColor.rgb = mix(fog_colour, gl_FragColor.rgb, fog_factor);
+	//gl_FragColor.rgb = mix(fog_colour, gl_FragColor.rgb, fog_factor);
 	
 }

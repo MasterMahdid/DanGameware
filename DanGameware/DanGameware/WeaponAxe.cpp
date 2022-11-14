@@ -49,8 +49,16 @@ void WeaponAxe::Update(float dt)
 	else
 	{
 		h3dSetModelAnimParams(this->modelNode, 1, this->animTime, 1);
-		this->animTime += 60 * dt;
-		if (animTime >= 3)
+		
+		if (animTime >= 7)
+		{
+			this->animTime += 60 * dt;
+		}
+		else
+		{
+			this->animTime += 35 * dt;
+		}
+		if (animTime >= 16)
 		{
 			auto projectile = new ProjectileAxe();
 			addGameObject(projectile);
@@ -67,7 +75,6 @@ void WeaponAxe::Update(float dt)
 			float dir_rad_x = dx*H3D_DEG2RAD;
 			auto move_dir = Vector3df(-sinf(dir_rad_y), sinf(dir_rad_x), -cosf(dir_rad_y));
 			projectile->shoot(Vector3df(xa2.x, xa2.y, xa2.z), move_dir, axeignorePawn);
-		
 
 			h3dSetModelAnimParams(this->modelNode, 1, this->animTime, 0);
 			
@@ -77,7 +84,7 @@ void WeaponAxe::Update(float dt)
 			{
 				h3dSetNodeTransform(this->modelNode, f, 0, 0, -f, 0, 0, 1, 1, 1);
 			}, 0.3, EASING_FUNCTION::CircularEaseOut,213,0.25);
-			tweener.delayCall(0.2, [&]() {allow_attack = true; });
+			tweener.delayCall(0.5, [&]() {allow_attack = true; });
 		}
 	}
 	
@@ -97,6 +104,7 @@ void WeaponAxe::attack(Hndl ignorePawn)
 	allow_attack = false;
 	animTime = 0;
 	axeignorePawn = ignorePawn;
+	fpsCharacter->shootCamAnim();
 }
 void WeaponAxe::jump()
 {
@@ -144,7 +152,7 @@ void ProjectileAxe::shoot(Vector3df start_pos, Vector3df direction,Hndl ignorePa
 			auto len = (ci.contactPoint - Vector3df(cam_x, cam_y, cam_z)).getLength();
 			float vol = 100.f / len;
 			vol = clamp(vol, 0, 1);
-			khsound::play_sound(khsound::SOUND_IMPACT_1, vol);
+			//khsound::play_sound(khsound::SOUND_IMPACT_1, vol);
 		}
 	}, ignorePawn);
 	khsound::play_sound(khsound::SOUND_WHOOSH);
@@ -159,6 +167,7 @@ void ProjectileAxe::Update(float dt)
 		return;
 	float x, y, z, rz;
 	h3dGetNodeTransform(projectile, &x, &y, &z, nullptr, nullptr, &rz, nullptr, nullptr, nullptr);
+	
 	rz += dt * -1900;//rotational speed
 
 	shoot_direction.y -= 800 * dt;//gravity;
@@ -171,7 +180,7 @@ void ProjectileAxe::Update(float dt)
 	z += move_dir.z;
 	
 	h3dSetNodeTransform(projectile, x, y, z, 0, ddr, rz, 1, 1, 1);
-	//dd_sphere(Vector3df(x,y,z), 10, Vector3df(0, 0, 1));
+	dd_sphere(Vector3df(x,y,z), 7, Vector3df(0, 0, 1));
 	g_phyis.setProjectilePosition(phys_handle, Vector3df(x, y, z));
 
 }

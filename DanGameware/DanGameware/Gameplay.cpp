@@ -8,6 +8,9 @@ inline bool isKeyDown(int key, GLFWwindow* _winHandle)
 	return glfwGetKey(_winHandle, key) == GLFW_PRESS;
 }
 bool always_run = true;
+bool flyCamEnabled = false;
+flyThroughCam* flyCam;
+FPSCharacter* fpsCharacter;
 void playerInput::capture(GLFWwindow* _winHandle)
 {
 	this->dx = this->dy = 0;
@@ -42,9 +45,11 @@ void commitGameObjectListChanges()
 
 void flyThroughCam::Update(float dt)
 {
+	if (!flyCamEnabled)
+		return;
+
 	float x, y, z, rx, ry;
 	h3dGetNodeTransform(_cam, &x, &y, &z, &rx, &ry, nullptr, nullptr, nullptr, nullptr);
-
 	float speed = 150* g_input.dy;
 	float speedstr = 150 * -g_input.dx;
 	{
@@ -62,13 +67,11 @@ void flyThroughCam::Update(float dt)
 		z += move_dir.z;
 	}
 
-	float sens = 5;
-	ry -= g_input.drx*sens*dt;
-	// Loop up/down but only in a limited range
-	rx += g_input.dry*sens*dt;
+	float sens = 0.1;
+	ry -= g_input.drx*sens;
+	rx += g_input.dry*sens;
 	if (rx > 90) rx = 90;
 	if (rx < -90) rx = -90;
-
 	h3dSetNodeTransform(_cam, x, y, z, rx, ry, 0, 1, 1, 1);
 }
 

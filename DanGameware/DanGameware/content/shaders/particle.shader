@@ -20,7 +20,7 @@ context TRANSLUCENT
 	PixelShader = compile GLSL FS_TRANSLUCENT;
 	
 	ZWriteEnable = false;
-	BlendMode = AddBlended;
+	BlendMode = Blend;
 }
 
 OpenGL4
@@ -112,7 +112,6 @@ varying vec2 texCoords;
 void main( void )
 {
 	vec4 albedo = texture2D( albedoMap, texCoords );
-	
 	gl_FragColor = albedo * color;
 }
 

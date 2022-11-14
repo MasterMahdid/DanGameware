@@ -32,10 +32,10 @@ Tween g_tween;
 
 
 
-#define WINDOW_WIDTH (1600)
-#define WINDOW_HEIGHT (900)
+#define WINDOW_WIDTH (1280)
+#define WINDOW_HEIGHT (720)
 #define FULL_SCREEN (0)
-#define MSAA_C (8)
+#define MSAA_C (0)
 #define V_SYNC (1)
 
 H3DNode main_camera = 0;
@@ -54,6 +54,7 @@ float timescale = 1;
 bool edit_mode = false;
 bool fisrt_mosue = true;
 
+bool pause_after_current_frame=false;
 void dw_console_log(const char* fmt, ...);
 void windowCloseListener(GLFWwindow* win)
 {
@@ -64,9 +65,20 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
 	if (key == GLFW_KEY_P && action == GLFW_PRESS)
 	{
-		dw_console_log("pressed P");
 		game_pause = !game_pause;
+		pause_after_current_frame = false;
 	}
+	if (key == GLFW_KEY_T && action == GLFW_PRESS)
+	{
+		flyCamEnabled = !flyCamEnabled;
+	}
+	if (key == GLFW_KEY_O && action == GLFW_PRESS)
+	{
+		pause_after_current_frame = true;
+		game_pause = false;
+	}
+	
+	
 }
 void mouseMoveListener(GLFWwindow* win, double x, double y)
 {
@@ -177,7 +189,7 @@ void detectMaterials()
 	while (mat=h3dGetNextResource(H3DResTypes::Material, mat))
 	{
 		std::string nm = h3dGetResName(mat);
-		if (nm.find("models/statue/mat.material.xml") == std::string::npos)
+		if (nm.find("materials/floors/tiles1/mat.material.xml") == std::string::npos)
 			continue;
 		auto m_samplerIndex = h3dFindResElem(mat, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "matSpecParams");
 		if (m_samplerIndex != -1)
@@ -222,7 +234,7 @@ void initGame(int winWidth, int winHeight)
 	H3DRes particle_shader = h3dAddResource(H3DResTypes::Shader, "shaders/particle.shader", 0);
 	H3DRes overlay_shader = h3dAddResource(H3DResTypes::Shader, "shaders/overlay.shader", 0);
 	background_mat = h3dAddResource(H3DResTypes::Material, "textures/backgroundfill.material.xml", 0);
-	h3dutLoadResourcesFromDisk("./enginecontent/");
+	h3dutLoadResourcesFromDisk("D:/Alvahshi/game/sources/DanGameware/DanGameware/content");
 
 
 	main_camera = h3dAddCameraNode(H3DRootNode, "Camera", pipeRes);
@@ -278,7 +290,7 @@ void gameRender()
 		h3dRender(main_camera);
 		h3dFinalizeFrame();
 		h3dClearOverlays();
-		//debug_draw_frame(main_camera, false);
+		debug_draw_frame(main_camera, false);
 	}
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -360,7 +372,7 @@ void mapLoadUpdate()
 void main_load_map()
 {
 	auto t1 = glfwGetTime();
-	mapLoad("finalook", &mapLoadUpdate);
+	mapLoad("esatwall", &mapLoadUpdate);
 	detectMaterials();
 	dw_console_log("map load time = %0.2f", glfwGetTime() - t1);
 }
@@ -419,9 +431,22 @@ int main(int argc, char** argv)
 
 		if (dt > 0.1f) dt = 0.1f;
 		
-		if(game_pause==false)
+		if (game_pause == false)
+		{
 			gameupdate(dt);
+		}
+		else
+		{
+			g_input.capture(_winHandle);
+			::flyCam->Update(dt);
+		}
+
+		if (pause_after_current_frame)
+		{
+			game_pause = true;
+		}
 		gameRender();
+
 
 	}
 	ImGui_ImplOpenGL3_Shutdown();
@@ -499,6 +524,10 @@ void alve_editor_draw_material_controls()
 
 
 	ImGui::End();
+}
+void draw_particle_editor()
+{
+
 }
 f32 tttime;
 int framescouint=0;

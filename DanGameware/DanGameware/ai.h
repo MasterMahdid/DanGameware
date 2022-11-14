@@ -40,7 +40,8 @@ enum class Range
 	RANGE_MELLEE,
 	RANGE_NEAR,
 	RANGE_MID,
-	RANGE_FAR
+	RANGE_FAR,
+	RANGE_XFAR
 };
 Range getRange(f32 r);
 
