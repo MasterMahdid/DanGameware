@@ -20,6 +20,7 @@ private:
 	std::vector<SphereProjectile*> sphereProjectiles;
 public:
 	void loadLevel(float* tri_data,size_t tri_count);
+	void reset();
 	void update(float dt);
 	Hndl createPawn(float radius, float height, float *pos,void* userdata=nullptr, u32 flags=0);
 	void removePawn(Hndl pawn);

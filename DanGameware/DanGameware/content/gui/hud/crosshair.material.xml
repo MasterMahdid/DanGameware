@@ -1,0 +1,4 @@
+<Material>
+	<Shader source="shaders/overlay.shader"/>
+	<Sampler name="albedoMap" map="gui/hud/crosshair.png" />
+</Material>

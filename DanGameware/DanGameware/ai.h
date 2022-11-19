@@ -12,6 +12,7 @@ struct gentity_s
 	int flags;
 	H3DNode node;
 	int pawn;
+	void *user_data;
 	
 	int clipmask;//collision mask
 	gentity_t parent;

@@ -14,6 +14,10 @@
 #include "enemy.h"
 #include "ai.h"
 #include <GLFW/glfw3.h>
+#include "filesystem.h"
+
+
+
 
 
 extern physicEngine g_phyis;
@@ -27,65 +31,23 @@ std::vector<std::string> lms;
 int add_light_from_map(const char* filename);
 int add_player_from_map(const char* filename);
 int add_enemy_from_map(const char* filename);
+
+
 void removeAll()
 {
 	//TODO: implement this correctly
-	for (int i = 3;i<100; i++)
+	for (int i = 3;i<10000; i++)
 	{
 		h3dRemoveNode(i);
 	}
 	
 }
 H3DRes fireparticle;
-void* loadResourceData(const char* name, const char* content_dir, size_t& out_size)
-{
-	char path[1024] = {};
-	sprintf(path, "%s/%s", content_dir, name);
-	std::ifstream inf;
-	inf.clear();
-	inf.open(path, std::ios::binary);
-	if (inf.good() == false)
-	{
-		out_size = 0;
-		return nullptr;
-	}
-	inf.seekg(0, std::ios::end);
-	out_size = inf.tellg();
-	char* ret = new char[out_size];
-	inf.seekg(0);
-	inf.read(ret, out_size);
-	inf.close();
-	return ret;
-}
+
 void dw_console_log(const char* fmt, ...);
-void loadResourcesFromDisk(const char *contentDir,std::function<void()> update)
-{
-	int res = h3dQueryUnloadedResource(0);
-	double disktime = 0, h3dtime = 0;
-	double t0 = glfwGetTime();
-	while (res != 0)
-	{
-		auto resname = h3dGetResName(res);
-		size_t sz;
-		double t1 = glfwGetTime();
-		char* data = (char*)loadResourceData(resname, contentDir, sz);
-		double t2 = glfwGetTime();
 
-		h3dLoadResource(res, data, sz);
-		double t3 = glfwGetTime();
-		update();
-		disktime += (t2 - t1);
-		h3dtime += (t3 - t2);
-		res = h3dQueryUnloadedResource(0);
-	}
-	double totaltime = glfwGetTime() - t0;
-	dw_console_log("load time, disk=%0.2f         h3d=%0.2f           total=%0.2f", disktime, h3dtime, totaltime);
-
-}
 void mapPreload(const char* name, std::function<void()> update)
 {
-	const char* content_dir = getenv("ALVAHSHI_CONTENT");
-	
 	//2-load the new map
 	char geo_path[1024];
 	sprintf(geo_path, "maps/%s/%s.geo", name, name);
@@ -105,7 +67,7 @@ void mapPreload(const char* name, std::function<void()> update)
 	Enemy::add_res();
 
 	size_t sz2;
-	char* data = (char*)loadResourceData(scene_path, content_dir, sz2);
+	char* data = (char*)g_archive_reader.loadFileData(scene_path,sz2);
 	lms.clear();
 	auto chr = strstr(data, "lightmap_id=\"");
 	while (chr != 0)
@@ -128,7 +90,7 @@ void mapPreload(const char* name, std::function<void()> update)
 		chr = strstr(chr + 14, "lightmap_id=\"");
 	}
 	//4-load resources from disk
-	loadResourcesFromDisk(content_dir, update);
+	g_archive_reader.loadResourcesFromKhArchive(update);
 	khsound::load_sounds(update);
 
 }
@@ -137,8 +99,7 @@ void mapLoad(const char* name, std::function<void()> update)
 {
 	update();
 	mapPreload(name, update);
-	const char* baseq3 = getenv("ALVAHSHI_BASEQ3");
-	const char* content_dir = getenv("ALVAHSHI_CONTENT");
+	
 	//1- unload the previous map
 	for (const auto& go : gameObjects_array)
 	{
@@ -146,7 +107,9 @@ void mapLoad(const char* name, std::function<void()> update)
 	}
 	gameObjects_array.clear();
 
-	//removeAll();
+	removeAll();
+	khsound::stopAll();
+	g_phyis.reset();
 	//5- setup
 	H3DNode env = h3dAddNodes(H3DRootNode, envRes);
 	h3dSetNodeTransform(env, 0, 0, 0, 0, 0, 0, 1, 1, 1);
@@ -164,7 +127,7 @@ void mapLoad(const char* name, std::function<void()> update)
 		auto matname = h3dGetResName(mat);
 		
 		size_t sz;
-		char* data = (char*)loadResourceData(matname,content_dir,sz);
+		char* data = (char*)g_archive_reader.loadFileData(matname,sz);
 		if (data == nullptr)
 			continue;
 		
@@ -213,17 +176,21 @@ void mapLoad(const char* name, std::function<void()> update)
 	gameObjects_array.push_back(wx);
 	g_weapon_axe = wx;
 
-	g_entities = new gentity_s[100];
+	if (g_entities != nullptr)
+		delete[] g_entities;
 
+	g_entities = new gentity_s[100];
+	g_entities_len = 0;
 	
 	
 	char mapfn[1024];
-	sprintf(mapfn, "%s\\maps\\%s.map", baseq3,name);
+	sprintf(mapfn, "maps/%s/%s.map",name,name);
 	
 	add_light_from_map(mapfn);
 	add_player_from_map(mapfn);
 	add_enemy_from_map(mapfn);
-	khsound::play_sound(khsound::E1M1_MUSIC,1);
+	khsound::play_sound(khsound::E1M1_MUSIC,1,true);
+
 }
 std::string map_find_ent_prop_in_string(const char* key, const std::string& str, size_t start, size_t end)
 {
@@ -296,8 +263,9 @@ void addLight(Vector3df pos,Vector3df diff,float rad,float intensity,bool shadow
 }
 int add_light_from_map(const char* filename)
 {
-	std::ifstream t(filename);
-	std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+	size_t sz;
+	auto ret = g_archive_reader.loadFileData(filename, sz);
+	std::string str((char*)ret, sz);
 	size_t of = 0;
 	int lind = 0;
 	while (true)
@@ -348,8 +316,9 @@ int add_light_from_map(const char* filename)
 }
 int add_player_from_map(const char* filename)
 {
-	std::ifstream t(filename);
-	std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+	size_t sz;
+	auto ret = g_archive_reader.loadFileData(filename, sz);
+	std::string str((char*)ret, sz);
 	size_t of = 0;
 	int lind = 0;
 	while (true)
@@ -375,8 +344,9 @@ int add_player_from_map(const char* filename)
 }
 int add_enemy_from_map(const char* filename)
 {
-	std::ifstream t(filename);
-	std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+	size_t sz;
+	auto ret = g_archive_reader.loadFileData(filename, sz);
+	std::string str((char*)ret, sz);
 	size_t of = 0;
 	int lind = 0;
 	while (true)

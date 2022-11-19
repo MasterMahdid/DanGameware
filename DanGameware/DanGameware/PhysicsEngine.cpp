@@ -14,6 +14,8 @@
 
 const int MinimalPolysPerNode = 64;
 int NodeCount = 0;
+
+
 physicEngine g_phyis;
 
 struct SOctreeNode
@@ -39,6 +41,7 @@ struct SOctreeNode
 		}
 	}
 };
+
 SOctreeNode* g_octree_root = nullptr;
 void constructOctree(SOctreeNode* node);
 void getTrianglesFromOctree(SOctreeNode* node, s32& trianglesWritten, s32 maximumSize, const Aabbox3d& box, const Matrix* mat, Triangle* triangles);
@@ -543,4 +546,13 @@ bool physicEngine::trace(Vector3df from, Vector3df to,Vector3df& hit)
 		}
 	}
 	return min_dist_tri != nullptr;
+}
+
+void physicEngine::reset()
+{
+	pawns.clear();
+	sphereProjectiles.clear();
+	NodeCount = 0;
+	delete g_octree_root;
+	g_octree_root = nullptr;
 }

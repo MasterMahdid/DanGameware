@@ -5,6 +5,8 @@
 #include "Gameplay.h"
 #include "utMath.h"
 #include "debug_draw.h"
+#include "SoundEngine.h"
+#include "enemy.h"
 Range getRange(f32 r)
 {
 	if (r < 60)
@@ -127,17 +129,8 @@ void think_melee(gentity_t self)
 }
 void think_shoot(gentity_t self)
 {
-	auto projectile = new ProjectileAxe();
-	addGameObject(projectile);
-	Vector3df move_dir = (self->pos1 + Vector3df(0, 40, 0) - (self->enemy->pos1+Vector3df(0, 30, 0))).normalize()*-1;
-	//move_dir.y = 0;
-	projectile->shoot(self->pos1+Vector3df(0,40,0), move_dir,self->pawn);
-
-	//self->speed = 0;
+	((Enemy*)self->user_data)->shoot();
 	self->think = think_run;
-	self->nextthink = 0.3;
-	printf("shoot player\n");
-	//shoot player
 }
 
 void think_run(gentity_t self)
@@ -148,21 +141,24 @@ void think_run(gentity_t self)
 	move_dir.y = 0;
 	self->movedir = move_dir.normalize();
 	self->speed = 150;
-	/*if (range == Range::RANGE_MELLEE)
+	if (range == Range::RANGE_MELLEE)
 	{
-		self->think = &think_melee;
-		self->nextthink = 1;
-	}*/
+		if (canShoot(self, self->enemy))
+		{
+			self->think = &think_shoot;
+			self->nextthink = 0.1;
+		}
+	}
 	if (range == Range::RANGE_NEAR)
 	{
 		self->speed = 0;
 		self->think = think_run;//get closer
 		self->nextthink = 0.5;
 		float ran = (rand()*1.0f) / RAND_MAX;
-		if (canShoot(self, self->enemy) && ran>0.8f)
+		if (canShoot(self, self->enemy) && ran>0.5f)
 		{
 			self->think = &think_shoot;
-			self->nextthink = 0.3;
+			self->nextthink = 0.1;
 		}
 	}
 	else if (range == Range::RANGE_MID || range == Range::RANGE_FAR)
@@ -171,7 +167,7 @@ void think_run(gentity_t self)
 		if (canShoot(self, self->enemy) && ran>0.5f)
 		{
 			self->think = &think_shoot;
-			self->nextthink = 0.3;
+			self->nextthink = 0.1;
 		}
 		else
 		{
@@ -187,6 +183,7 @@ void think_stand(gentity_t self)
 	{
 		self->think = &think_run;
 		self->nextthink = 0.3;
+		khsound::play_sound_3d(khsound::SOUND_ENEMY_SPOT, self->pos1);
 	}
 	else
 	{

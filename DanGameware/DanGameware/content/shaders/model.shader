@@ -430,12 +430,12 @@ void main( void )
 	//Fog parameters, could make them uniforms and pass them into the fragment shader
 	float fog_maxdist = 10000;
 	float fog_mindist = 800;
-	vec3  fog_colour = vec3(0.48, 0.44, 0.27);
+	vec3  fog_colour = vec3(0, 0, 0);
 	// Calculate fog
 	float dist = length(viewDir);
 	float fog_factor = (fog_maxdist - dist)/(fog_maxdist - fog_mindist);
 	fog_factor = clamp(fog_factor, 0.0, 1.0);
 	fog_factor *= fog_factor;
-	//gl_FragColor.rgb = mix(fog_colour, gl_FragColor.rgb, fog_factor);
+	gl_FragColor.rgb = mix(fog_colour, gl_FragColor.rgb, fog_factor);
 	
 }

@@ -4,27 +4,31 @@
 #include "soloud.h"
 #include "soloud_wav.h"
 #include "SoundEngine.h"
+#include <Horde3D.h>
+#include "utMath.h"
+#include "debug_draw.h"
+#include "filesystem.h"
 namespace khsound
 {
-	const char* content_dir;
 	std::unordered_map<SND_ID, SoLoud::Wav*> sounds;
 	SoLoud::Soloud soloud;  // SoLoud engine core
 	void init_sound()
 	{
 		soloud.init();
-		content_dir = getenv("ALVAHSHI_CONTENT");
 	}
 	void shutdown_sound()
 	{
 		soloud.deinit();
 		//TODO delete SoLoud::Wav new'ed in loadSnd
 	}
-	void loadSnd(const char* sound_path,SND_ID id)
+	void loadSnd(const char* sound_path, SND_ID id)
 	{
 		auto *s = new SoLoud::Wav();
-		char path[1024];
-		sprintf(path, "%s\\%s", content_dir, sound_path);
-		s->load(path);
+		size_t size;
+		byte* data = g_archive_reader.loadFileData(sound_path, size);
+		if (data == nullptr)
+			return;
+		s->loadMem(data, size);
 		sounds[id] = s;
 	}
 	void load_sounds(std::function<void()> update)
@@ -48,15 +52,60 @@ namespace khsound
 		loadSnd("sounds\\sfx\\impact\\impact1.wav", SOUND_IMPACT_1);
 		update();
 		loadSnd("sounds\\sfx\\whoosh.wav", SOUND_WHOOSH);
-		
-		
+		update();
+		loadSnd("sounds\\sfx\\gore\\gore_1.wav", SOUND_GORE_1);
+		update();
+		loadSnd("sounds\\sfx\\gore\\gore_2.wav", SOUND_GORE_2);
+		update();
+		loadSnd("sounds\\sfx\\gore\\death.wav", SOUND_DEATH);
+		update();
+		loadSnd("sounds\\sfx\\enemy\\damage_1.mp3", SOUND_ENEMY_DAMAGE_1);
+		update();
+		loadSnd("sounds\\sfx\\enemy\\death.mp3", SOUND_ENEMY_DEATH);
+		update();
+		loadSnd("sounds\\sfx\\enemy\\spot.mp3", SOUND_ENEMY_SPOT);
+
+
+
 	}
-	void play_sound(SND_ID snd,float vol)
+	void updateCamPos(H3DNode camera)
 	{
-		soloud.play(*sounds[snd], vol);
+		float x, y, z;
+		h3dGetNodeTransform(camera, &x, &y, &z, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+
+		float* mat = new float[16];
+		h3dGetNodeTransMats(camera, NULL, (const float**)&mat);
+		Horde3D::Matrix4f mt2(mat);
+		///mt2 = mt2.inverted();
+		Horde3D::Vec3f pp(0, 0, -100);//forward vector;
+		auto pc = mt2*pp;
+		pc.x -= x;
+		pc.y -= y;
+		pc.z -= z;
+		//dd_point(Vector3df(pc.x, pc.y, pc.z), DD_RED,10,1);
+
+		soloud.set3dListenerPosition(x, y, z);
+		soloud.set3dListenerAt(pc.x, pc.y, pc.z);
+		soloud.set3dListenerUp(0, 1, 0);
+		soloud.update3dAudio();
+		//http://solhsa.com/soloud/core3d.html
+		
+
 	}
-	void play_sound_3d(SND_ID snd,float x,float y,float z, float vol)
+	void play_sound(SND_ID snd, float vol, bool loop)
 	{
-		soloud.play3d(*sounds[snd],x,y,z,0,0,0,vol);
+		auto h = soloud.play(*sounds[snd], vol);
+		if (loop)
+			soloud.setLooping(h, true);
+
 	}
+	void play_sound_3d(SND_ID snd, Vector3df pos, float vol)
+	{
+		soloud.play3d(*sounds[snd], pos.x, pos.y, pos.z, 0, 0, 0, vol);
+	}
+	void stopAll()
+	{
+		soloud.stopAll();
+	}
+
 }

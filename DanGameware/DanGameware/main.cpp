@@ -21,28 +21,30 @@
 #include "soloud.h"
 #include "soloud_wav.h"
 #include "ai.h"
-extern "C" {
+/*extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
-}
+}*/
 #include "debug_draw.h";
-
+#include "filesystem.h"
 Tween g_tween;
 
 
 
-#define WINDOW_WIDTH (1280)
-#define WINDOW_HEIGHT (720)
+#define WINDOW_WIDTH (1920)
+#define WINDOW_HEIGHT (1080)
 #define FULL_SCREEN (0)
 #define MSAA_C (0)
-#define V_SYNC (1)
+#define V_SYNC (0)
 
 H3DNode main_camera = 0;
 gentity_t g_entities = nullptr;
 size_t g_entities_len = 0;
 bool game_pause = false;
-H3DRes background_mat;
+H3DRes background_mat, crosshairmat;
+
+ArchiveReader g_archive_reader;
 
 extern int player_health;
 
@@ -214,6 +216,12 @@ void dumph3dMessages()
 }
 void initGame(int winWidth, int winHeight)
 {
+#ifdef KH_RELEASE_PACKAGE
+		g_archive_reader.addArchive("arch.bag");
+#else
+		g_archive_reader.addDirectory("D:/Alvahshi/game/sources/DanGameware/DanGameware/content");
+		g_archive_reader.addDirectory(getenv("ALVAHSHI_CONTENT"));
+#endif
 	h3dInit(H3DRenderDevice::OpenGL2);
 	h3dSetOption(H3DOptions::SampleCount, (float)MSAA_C);
 	h3dSetOption(H3DOptions::FastAnimation, (float)0);
@@ -233,8 +241,11 @@ void initGame(int winWidth, int winHeight)
 	H3DRes skybox_shader = h3dAddResource(H3DResTypes::Shader, "shaders/skybox.shader", 0);
 	H3DRes particle_shader = h3dAddResource(H3DResTypes::Shader, "shaders/particle.shader", 0);
 	H3DRes overlay_shader = h3dAddResource(H3DResTypes::Shader, "shaders/overlay.shader", 0);
+	crosshairmat = h3dAddResource(H3DResTypes::Material, "gui/hud/crosshair.material.xml", 0);
 	background_mat = h3dAddResource(H3DResTypes::Material, "textures/backgroundfill.material.xml", 0);
-	h3dutLoadResourcesFromDisk("D:/Alvahshi/game/sources/DanGameware/DanGameware/content");
+	
+	
+	g_archive_reader.loadResourcesFromKhArchive([]() {});
 
 
 	main_camera = h3dAddCameraNode(H3DRootNode, "Camera", pipeRes);
@@ -275,6 +286,7 @@ void gameupdate(float dt)
 	}
 	g_tween.update(dt);
 	updateEmitters(dt);
+	khsound::updateCamPos(main_camera);
 
 	//phdt = glfwGetTime() - t;
 	//phys_time += phdt;
@@ -284,14 +296,22 @@ void gameupdate(float dt)
 }
 void gameRender()
 {
-	//if (game_pause == false)
-	{
-		
-		h3dRender(main_camera);
-		h3dFinalizeFrame();
-		h3dClearOverlays();
-		debug_draw_frame(main_camera, false);
-	}
+	//show overlay
+	const float ww = (float)h3dGetNodeParamI(main_camera, H3DCamera::ViewportWidthI) /(float)h3dGetNodeParamI(main_camera, H3DCamera::ViewportHeightI);
+	const float w = 0.04;
+	const float ovLogo[] = {
+		(ww*0.5)-w, 0.5-w, 0, 1,
+		(ww*0.5)-w, 0.5+w, 0, 0,
+		(ww*0.5)+w, 0.5 + w, 1, 0,
+		(ww*0.5)+w, 0.5 - w, 1, 1
+	};
+	h3dShowOverlays(ovLogo, 4, 1, 1, 1, 1, crosshairmat, 0);
+
+	h3dRender(main_camera);
+	h3dFinalizeFrame();
+	h3dClearOverlays();
+	debug_draw_frame(main_camera, false);
+
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwMakeContextCurrent(_winHandle);
@@ -302,28 +322,27 @@ std::vector<H3DNode> dynamic_lights;
 int selected_light_idx = 0;
 bool allow_tab=true;
 
-int maadwawdin(void) {
+/*int maadwawdin(void) {
 	char buff[256];
 	int error;
 	lua_State *L = luaL_newstate();
-	luaopen_base(L);             /* opens the basic library */
-	luaopen_table(L);            /* opens the table library */
-	luaopen_io(L);               /* opens the I/O library */
-	luaopen_string(L);           /* opens the string lib. */
-	luaopen_math(L);             /* opens the math lib. */
+	luaopen_base(L);
+	luaopen_table(L);
+	luaopen_io(L);   
+	luaopen_string(L);
+	luaopen_math(L);  
 
 	while (fgets(buff, sizeof(buff), stdin) != NULL) {
 		error = luaL_loadbuffer(L, buff, strlen(buff), "line") ||
 			lua_pcall(L, 0, 0, 0);
 		if (error) {
 			fprintf(stderr, "%s", lua_tostring(L, -1));
-			lua_pop(L, 1);  /* pop error message from the stack */
+			lua_pop(L, 1);  
 		}
 	}
-
 	lua_close(L);
 	return 0;
-}
+}*/
 int ldupdate_cnt = 0;
 void mapLoadUpdate()
 {
@@ -371,10 +390,16 @@ void mapLoadUpdate()
 }
 void main_load_map()
 {
+	g_tween = Tween();
 	auto t1 = glfwGetTime();
 	mapLoad("esatwall", &mapLoadUpdate);
 	detectMaterials();
 	dw_console_log("map load time = %0.2f", glfwGetTime() - t1);
+}
+bool do_reload_map = false;
+void map_reload()
+{
+	do_reload_map = true;
 }
 //h3dsetGlobalShaderUniform(const char* name,)
 int main(int argc, char** argv);
@@ -385,13 +410,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 int main(int argc, char** argv)
 {
 	//maadwawdin();
-	const char* baseq3 = getenv("ALVAHSHI_BASEQ3");
-	if (baseq3 == NULL)
-		putenv("ALVAHSHI_BASEQ3=./");
-	const char* alv_cotent = getenv("ALVAHSHI_CONTENT");
-	if (alv_cotent == NULL)
-		putenv("ALVAHSHI_CONTENT=./content/");
-	
 	init();
 	initGame(WINDOW_WIDTH, WINDOW_HEIGHT);
 	debug_draw_init();
@@ -401,6 +419,11 @@ int main(int argc, char** argv)
 	double last_t = glfwGetTime();
 	while (running)
 	{
+		if (do_reload_map)
+		{
+			do_reload_map = false;
+			main_load_map();
+		}
 		//dt
 		double t = glfwGetTime();
 		float dt = t - last_t;
@@ -584,6 +607,18 @@ void imgui_stats_window()
 	}
 	
 }
+void alve_draw_options_menu()
+{
+	ImGui::Begin("Options");
+	int current_item=0;
+	const char* items[] = { "800x600", "1280x720", "1440x900", "1600x900", "1920x1080"};
+	ImGui::Combo("Resolution", &current_item, items,5);
+	bool f = true;
+	ImGui::Checkbox("Fullscreen", &f);
+	ImGui::Checkbox("V-sync", &f);
+	ImGui::Button("Apply");
+	ImGui::End();
+}
 void khshowConsole();
 void imgui_frame()
 {
@@ -598,6 +633,7 @@ void imgui_frame()
 	if (edit_mode)
 	{
 		//ImGui::ShowDemoWindow();
+		alve_draw_options_menu();
 		alve_editor_draw_material_controls();
 		khshowConsole();
 		bool select_closest_light = false;

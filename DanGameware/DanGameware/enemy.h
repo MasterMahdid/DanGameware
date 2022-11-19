@@ -9,13 +9,15 @@ private:
 	Vector3d<f32> velocity;
 	float animrandomofset;
 	float animTime;
-	float hittime;
+	float hittime, attacktime;
 	float walkAnimTime;
 	float deathAnimTime;
 	float idle_walk_fade;
 	bool walking;
 	bool alive;
 	float health;
+	float walk_time;
+	int foot_sound;
 	gentity_t ent;
 	Vector3df impulseVel;
 public:
@@ -25,6 +27,7 @@ public:
 	virtual void PhysicUpdate(float dt)override;
 	virtual void Update(float dt)override;
 	void onProjectileHit(Vector3df hit_pos);
+	void shoot();
 };
 class EnemyAnimationController
 {

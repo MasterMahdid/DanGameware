@@ -5,8 +5,7 @@
 //#include "debug_draw.h"
 void dw_console_log(const char* fmt, ...);
 gentity_t player_ent;
-int player_health = 100;
-bool playerDead = false;
+
 namespace fpscharacter_internal
 {
 	Tween tween;
@@ -23,11 +22,27 @@ namespace fpscharacter_internal
 	float falling_time = 0;
 	float current_moving_speed = 0;
 	f32 bloodmask = 0;
+	f32 ofset_rx = 0, ofset_rz = 0;
+	f32 head_height = 23;
+	H3DRes cammat;
+	int bloodMaskIndex;
+	float walk_time = 0;
+	int foot_sound = 0;
+	float damp_speed_x = 0;
+	float damp_speed_x_vel = 0;
+	float damp_speed_y = 0;
+	float damp_speed_y_vel = 0;
+	float animTime;
+	bool shaking = false;
+	f32 shaking_mag;
+	bool allow_attack = true;
+	bool playerDead = false;
 }
+int player_health = 100;
+
 using namespace fpscharacter_internal;
 
-H3DRes cammat;
-int bloodMaskIndex;
+
 void detectMat()
 {
 	cammat = h3dAddResource(H3DResTypes::Material, "pipelines/postalve.material.xml",0);
@@ -60,22 +75,42 @@ FPSCharacter::FPSCharacter(H3DNode cam,gentity_t ent)
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, 0.75);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 2,0.50);
 	detectMat();
+
+	tween =  Tween();
+	walk_tween = Tween();
+	vely = 0;
+	move_speed = 100;
+	fac = 0;
+	allow_jump = true;
+	last_grounded = false;
+	cam_y_ofset=0;
+	cam_y_ofset2=0;
+	cam_rx = 0, cam_ry = 0, cam_rz = 0;
+	grounded_anim = true;
+	falling_time = 0;
+	current_moving_speed = 0;
+	bloodmask = 0;
+	ofset_rx = 0, ofset_rz = 0;
+	head_height = 23;
+	walk_time = 0;
+	foot_sound = 0;
+	damp_speed_x = 0;
+	damp_speed_x_vel = 0;
+	damp_speed_y = 0;
+	damp_speed_y_vel = 0;
+	animTime=0;
+	shaking = false;
+	shaking_mag = 0;
+	allow_attack = true;
+	playerDead = false;
+	player_health = 100;
 	//tween.callFuncPeriodic(0, 1, [](float x) {bloodmask = x; }, 0.4615 / 2, EASING_FUNCTION::Linear, 0, 0, 0, true);
 }
 FPSCharacter::~FPSCharacter()
 {
-	//g_phyis.destroy(pawn);
 }
-float walk_time = 0;
-int foot_sound = 0;
-float damp_speed_x = 0;
-float damp_speed_x_vel = 0;
-float damp_speed_y = 0;
-float damp_speed_y_vel = 0;
-/*extern*/ float animTime;
 
-bool shaking = false;
-f32 shaking_mag;
+
 void StartShake(f32 mag,f32 duration)
 {
 	shaking = true;
@@ -85,7 +120,6 @@ void StartShake(f32 mag,f32 duration)
 		shaking = false;
 	});
 }
-bool allow_attack = true;
 void FPSCharacter::PhysicUpdate(float dt)
 {
 	float rx, ry, rz, t;
@@ -153,7 +187,7 @@ void FPSCharacter::PhysicUpdate(float dt)
 		//tween.removeByTag(25);
 		//tween.callFuncPeriodic(30*dt, 0, [](float x) {vely = x; }, 0.2, EASING_FUNCTION::Linear,25);
 		g_weapon_axe->jump();
-		khsound::play_sound(khsound::SOUND_JUMP,0.3);
+		khsound::play_sound(khsound::SOUND_JUMP,0.5);
 	}
 	if (g_input.jumpPressed == false)
 	{
@@ -215,8 +249,7 @@ f32 random(f32 min, f32 max)
 	f32 r = (rand()*1.0f) / RAND_MAX;
 	return min + (max - min)*r;
 }
-f32 ofset_rx = 0, ofset_rz = 0;
-f32 head_height = 23;
+
 void FPSCharacter::Update(float dt)
 {
 	auto tr = g_phyis.getTransform(pawn);
@@ -247,6 +280,7 @@ void FPSCharacter::Update(float dt)
 
 	//dd_sphere(Vector3df(), 200, DD_RED);
 }
+void map_reload();
 void FPSCharacter::onProjectileHit(Vector3df hit_pos)
 {
 	if (playerDead)
@@ -254,6 +288,7 @@ void FPSCharacter::onProjectileHit(Vector3df hit_pos)
 	
 
 	player_health -= random(4,8);
+	khsound::play_sound(khsound::SOUND_GORE_1);
 	if (player_health <= 0)
 	{
 		playerDead = true;
@@ -262,6 +297,11 @@ void FPSCharacter::onProjectileHit(Vector3df hit_pos)
 		tween.callFuncPeriodic(0, 10, [](float x) {ofset_rz = x; },1, EASING_FUNCTION::Linear);
 		tween.callFuncPeriodic(head_height, -23, [](float x) {head_height = x; }, 1, EASING_FUNCTION::BounceEaseOut);
 		g_weapon_axe->death();
+		khsound::play_sound(khsound::SOUND_DEATH);
+		tween.delayCall(1, [](){
+			map_reload();
+		});
+		
 
 	}
 	else

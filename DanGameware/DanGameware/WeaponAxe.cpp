@@ -68,7 +68,7 @@ void WeaponAxe::Update(float dt)
 			float* mat = new float[16];
 			h3dGetNodeTransMats(main_camera, NULL, (const float**)&mat);
 			Horde3D::Matrix4f mt2(mat);
-			Horde3D::Vec3f xa(15, -10, 0);
+			Horde3D::Vec3f xa(0, -10, 0);
 			Horde3D::Vec3f xa2 = mt2*xa;
 
 			float dir_rad_y = dy*H3D_DEG2RAD;
@@ -84,7 +84,7 @@ void WeaponAxe::Update(float dt)
 			{
 				h3dSetNodeTransform(this->modelNode, f, 0, 0, -f, 0, 0, 1, 1, 1);
 			}, 0.3, EASING_FUNCTION::CircularEaseOut,213,0.25);
-			tweener.delayCall(0.5, [&]() {allow_attack = true; });
+			tweener.delayCall(0.4, [&]() {allow_attack = true; });
 		}
 	}
 	
@@ -155,7 +155,7 @@ void ProjectileAxe::shoot(Vector3df start_pos, Vector3df direction,Hndl ignorePa
 			//khsound::play_sound(khsound::SOUND_IMPACT_1, vol);
 		}
 	}, ignorePawn);
-	khsound::play_sound(khsound::SOUND_WHOOSH);
+	khsound::play_sound_3d(khsound::SOUND_WHOOSH, start_pos);
 }
 void ProjectileAxe::PhysicUpdate(float dt)
 {
@@ -180,7 +180,7 @@ void ProjectileAxe::Update(float dt)
 	z += move_dir.z;
 	
 	h3dSetNodeTransform(projectile, x, y, z, 0, ddr, rz, 1, 1, 1);
-	dd_sphere(Vector3df(x,y,z), 7, Vector3df(0, 0, 1));
+	//dd_sphere(Vector3df(x,y,z), 7, Vector3df(0, 0, 1));
 	g_phyis.setProjectilePosition(phys_handle, Vector3df(x, y, z));
 
 }

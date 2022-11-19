@@ -5,8 +5,10 @@
 #include "ai.h"
 #include "debug_draw.h"
 #include "Tween.h"
+#include "SoundEngine.h"
 void dw_console_log(const char* fmt, ...);
 H3DRes enemy_res,enemy_anim_run_res, enemy_anim_idle_res, enemy_anim_death_res, enemy_anim_hit_res;
+H3DRes enemy_anim_attack;
 H3DRes blood_particle_res;
 extern H3DNode main_camera;
 
@@ -20,6 +22,7 @@ void Enemy::add_res()
 	enemy_anim_idle_res = h3dAddResource(H3DResTypes::Animation, "models/enemysoldier/idle.anim", 0);
 	enemy_anim_death_res = h3dAddResource(H3DResTypes::Animation, "models/enemysoldier/death.anim", 0);
 	enemy_anim_hit_res = h3dAddResource(H3DResTypes::Animation, "models/enemysoldier/react.anim", 0);
+	enemy_anim_attack= h3dAddResource(H3DResTypes::Animation, "models/enemysoldier/attack.anim", 0);
 	blood_particle_res = h3dAddResource(H3DResTypes::SceneGraph, "particles/blood/blood.scene.xml", 0);
 
 }
@@ -37,15 +40,18 @@ Enemy::Enemy(gentity_t _ent)
 	init_enemy(ent);
 	this->animTime = 0;
 	this->hittime = 0;
+	this->attacktime = 0;
 	h3dSetupModelAnimStage(node, 0, enemy_anim_run_res, 0, "", false);
 	h3dSetupModelAnimStage(node, 1, enemy_anim_idle_res, 0, "", false);
 	h3dSetupModelAnimStage(node, 2, enemy_anim_death_res, 0, "", false);
 	h3dSetupModelAnimStage(node, 3, enemy_anim_hit_res, 0, "", false);
+	h3dSetupModelAnimStage(node, 4, enemy_anim_attack, 0, "", false);
 	
 	
 	
 	float ran = (rand()*1.0f) / RAND_MAX;
 	animrandomofset = ran * 30;
+	ent->user_data = this;
 	
 	health = 100;
 	alive = true;
@@ -64,6 +70,33 @@ void Enemy::PhysicUpdate(float dt)
 	float vv[3]{ vel.x+ impulseVel.x,vel.y+ impulseVel.y,vel.z+ impulseVel.z };
 	g_phyis.setVelocity(pawn, vv);
 	velocity = vel;
+
+	auto tr = g_phyis.getTransform(pawn);
+	if ((abs(vv[0]) > 100 || abs(vv[2])>100) && tr.grounded)
+	{
+		walk_time += dt;
+		if (walk_time > 0.8f)
+		{
+			if (foot_sound == 0)
+			{
+				khsound::play_sound_3d(khsound::SOUND_FOOTSTEP_4, ent->pos1);
+				foot_sound = 1;
+			}
+			else if (foot_sound == 1)
+			{
+				khsound::play_sound_3d(khsound::SOUND_FOOTSTEP_2, ent->pos1);
+				foot_sound = 2;
+			}
+			else if (foot_sound == 2)
+			{
+				khsound::play_sound_3d(khsound::SOUND_FOOTSTEP_3, ent->pos1);
+				foot_sound = 0;
+			}
+
+			walk_time = 0;
+		}
+	}
+
 }
 extern Tween g_tween;
 void Enemy::Update(float dt)
@@ -136,6 +169,7 @@ void Enemy::Update(float dt)
 	h3dSetNodeTransform(node, tr.x, y, tr.z, 0, ent->angle, 0, sx, sx, sx);
 	float animspeed = 32;
 	hittime -= dt;
+	attacktime -= dt;
 	if (alive)
 	{
 		
@@ -146,14 +180,31 @@ void Enemy::Update(float dt)
 			h3dSetModelAnimParams(node, 1, this->animTime + this->animrandomofset, moving ? 0 : 1);//idle
 			h3dSetModelAnimParams(node, 2, this->animTime, 0);//death
 			h3dSetModelAnimParams(node, 3, this->animTime, 5);//hit
+			h3dSetModelAnimParams(node, 4, this->animTime, 0);//attack
 		}
 		else
 		{
-			this->animTime += animspeed*dt;
-			h3dSetModelAnimParams(node, 0, this->animTime + this->animrandomofset, moving ? 1 : 0);//run
-			h3dSetModelAnimParams(node, 1, this->animTime + this->animrandomofset, moving ? 0 : 1);//idle
-			h3dSetModelAnimParams(node, 2, 0, 0);//death
-			h3dSetModelAnimParams(node, 3, 0, 0);//hit
+			if (attacktime > 0)
+			{
+				animspeed = 50;
+				this->animTime += animspeed*dt;
+				h3dSetModelAnimParams(node, 0, 0, 0);//run
+				h3dSetModelAnimParams(node, 1, 0, 0);//idle
+				h3dSetModelAnimParams(node, 2, 0, 0);//death
+				h3dSetModelAnimParams(node, 3, 0, 0);//idle
+				h3dSetModelAnimParams(node, 4, this->animTime, 1);//attack
+			}
+			else
+			{
+				this->animTime += animspeed*dt;
+				h3dSetModelAnimParams(node, 0, this->animTime + this->animrandomofset, moving ? 1 : 0);//run
+				h3dSetModelAnimParams(node, 1, this->animTime + this->animrandomofset, moving ? 0 : 1);//idle
+				h3dSetModelAnimParams(node, 2, 0, 0);//death
+				h3dSetModelAnimParams(node, 3, 0, 0);//hit
+				h3dSetModelAnimParams(node, 4, this->animTime, 0);//attack
+			}
+			
+
 		}
 		
 	}
@@ -166,6 +217,7 @@ void Enemy::Update(float dt)
 		h3dSetModelAnimParams(node, 1, 0, 0);//idle
 		h3dSetModelAnimParams(node, 2, this->animTime,1);//death
 		h3dSetModelAnimParams(node, 3, 0, 0);//idle
+		h3dSetModelAnimParams(node, 4, 0, 0);//attack
 	}
 	
 	h3dUpdateModel(node, H3DModelUpdateFlags::Animation | H3DModelUpdateFlags::Geometry);
@@ -177,7 +229,16 @@ void Enemy::onProjectileHit(Vector3df hit_pos)
 	if (!alive)
 		return;
 	dw_console_log("hit enemy");
-	health -= 40;
+	health -= 60;
+
+	auto vec = (hit_pos - ent->pos1);
+	vec.normalize();
+	float PI = std::atan(1) * 4;
+	float ry = atan2(vec.x, vec.z) / PI * 180;
+	ent->angle = ry;
+
+	khsound::play_sound_3d(khsound::SOUND_GORE_2, hit_pos);
+
 	if (health < 0)
 	{
 		alive = false;
@@ -188,13 +249,15 @@ void Enemy::onProjectileHit(Vector3df hit_pos)
 			g_phyis.removePawn(pawn);
 		});
 		
-
+		this->animTime = 0;
+		khsound::play_sound_3d(khsound::SOUND_ENEMY_DEATH, ent->pos1);
 	
 	}	
 	else
 	{
 		hittime = 0.4;
 		this->animTime = 0;
+		khsound::play_sound_3d(khsound::SOUND_ENEMY_DAMAGE_1, ent->pos1);
 		
 	}
 	auto max_impulse = (this->ent->pos1 - player_ent->pos1).normalize() * 900;
@@ -205,8 +268,20 @@ void Enemy::onProjectileHit(Vector3df hit_pos)
 	g_tween.delayCall(1, [=]() {
 		h3dRemoveNode(blood_particle);
 	});
-
-
-	
 }
 
+void Enemy::shoot()
+{
+	ent->speed = 0;
+	f32 animspeed = 50;
+	float delay = (1.0f / animspeed) * 14;
+	g_tween.delayCall(delay, [=]() {
+		auto projectile = new ProjectileAxe();
+		addGameObject(projectile);
+		Vector3df move_dir = (ent->pos1 + Vector3df(0, 40, 0) - (ent->enemy->pos1 + Vector3df(0, 10, 0))).normalize()*-1;
+		projectile->shoot(ent->pos1 + Vector3df(0, 40, 0), move_dir, ent->pawn);
+	});
+	this->attacktime = (1.0f / animspeed) * 30;
+	this->animTime = 0;
+	ent->nextthink = this->attacktime;
+}
