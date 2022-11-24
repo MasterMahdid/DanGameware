@@ -231,7 +231,7 @@ void main( void )
 {
 #ifdef _F05_AlphaTest
 	vec4 albedo = texture2D( albedoMap, texCoords * vec2( 1, -1 ) ) * matDiffuseCol;
-	if( albedo.a < 0.01 ) discard;
+	if( albedo.a < 0.9 ) discard;
 #endif
 	
 	float dist = length( lightVec ) / lightPos.w;
@@ -302,7 +302,7 @@ void main( void )
 	
 	
 #ifdef _F05_AlphaTest
-	if( albedo.a < 0.01 ) discard;
+	if( albedo.a < 0.9 ) discard;
 #endif
 	
 #ifdef _F02_NormalMapping
@@ -402,11 +402,11 @@ void main( void )
 #endif
 
 #ifdef _F05_AlphaTest
-	if( albedo.a < 0.01 ) discard;
+	if( albedo.a < 0.9 ) discard;
 #endif
 	
 	float lighpow = 1.0;
-	vec3 fcol = (max(light.rgb*lighpow,0.0))*albedo.rgb;
+	vec3 fcol = (max(light.rgb*lighpow,0.4))*albedo.rgb;
 	gl_FragColor.rgb =fcol;
 	
 
@@ -428,9 +428,9 @@ void main( void )
 #endif
 	vec3 viewDir = viewerPos - pos.xyz;
 	//Fog parameters, could make them uniforms and pass them into the fragment shader
-	float fog_maxdist = 10000;
-	float fog_mindist = 800;
-	vec3  fog_colour = vec3(0, 0, 0);
+	float fog_maxdist = 6000;
+	float fog_mindist = 50;
+	vec3  fog_colour = vec3(0.82,0.86,0.57);
 	// Calculate fog
 	float dist = length(viewDir);
 	float fog_factor = (fog_maxdist - dist)/(fog_maxdist - fog_mindist);

@@ -188,8 +188,8 @@ void mapLoad(const char* name, std::function<void()> update)
 	
 	add_light_from_map(mapfn);
 	add_player_from_map(mapfn);
-	add_enemy_from_map(mapfn);
-	khsound::play_sound(khsound::E1M1_MUSIC,1,true);
+	//add_enemy_from_map(mapfn);
+	//khsound::play_sound(khsound::E1M1_MUSIC,1,true);
 
 }
 std::string map_find_ent_prop_in_string(const char* key, const std::string& str, size_t start, size_t end)

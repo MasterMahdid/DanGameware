@@ -7,7 +7,7 @@ inline bool isKeyDown(int key, GLFWwindow* _winHandle)
 {
 	return glfwGetKey(_winHandle, key) == GLFW_PRESS;
 }
-bool always_run = true;
+bool always_run = false;
 bool flyCamEnabled = false;
 flyThroughCam* flyCam;
 FPSCharacter* fpsCharacter;

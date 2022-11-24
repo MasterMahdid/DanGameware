@@ -407,8 +407,7 @@ bool Converter::writeModel(const std::string &assetPath, const std::string &asse
 	}
 	sprintf(buffer, "</Model>\n");
 	fwrite(buffer, 1, strlen(buffer), f);
-	sprintf(buffer, entity_xml.c_str());
-	fwrite(buffer, 1, strlen(buffer), f);
+	fwrite(entity_xml.c_str(), 1, entity_xml.length(), f);
 	fclose(f);
 	return result;
 }

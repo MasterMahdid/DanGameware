@@ -113,6 +113,7 @@ void main( void )
 	vec4 col0 = texture2D( buf0, texCoords );
 	vec3 fcol = ACESFitted(col0.rgb);
 	fcol = pow(fcol, vec3(1.0 / 2.2));
+	
 	gl_FragColor.a = 1.0;
 	gl_FragColor.rgb =fcol;
 	vec3 bloodcol = gl_FragColor.rgb;

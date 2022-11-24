@@ -1,0 +1,2 @@
+D:/Alvahshi/game/editor/gamedist/basealv/maps/esatwall.map 
+python D:\Alvahshi\newstructure\tools\cmduitls\copy.py "D:/Alvahshi/game/editor/gamedist/basealv/maps/esatwall.map" d:\

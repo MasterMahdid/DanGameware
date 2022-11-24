@@ -34,9 +34,9 @@ Tween g_tween;
 
 #define WINDOW_WIDTH (1920)
 #define WINDOW_HEIGHT (1080)
-#define FULL_SCREEN (0)
-#define MSAA_C (0)
-#define V_SYNC (0)
+#define FULL_SCREEN (1)
+#define MSAA_C (4)
+#define V_SYNC (1)
 
 H3DNode main_camera = 0;
 gentity_t g_entities = nullptr;
@@ -184,6 +184,13 @@ bool isKeyDown(int key)
 
 std::vector<H3DRes> matres;
 int specunifind;
+
+H3DRes postmatres;
+struct PostmatUniformIDs
+{
+	int exposure, thres, offset;
+};
+PostmatUniformIDs postmatuniforms;
 void detectMaterials()
 {
 	H3DRes mat = 0;
@@ -191,7 +198,7 @@ void detectMaterials()
 	while (mat=h3dGetNextResource(H3DResTypes::Material, mat))
 	{
 		std::string nm = h3dGetResName(mat);
-		if (nm.find("materials/floors/tiles1/mat.material.xml") == std::string::npos)
+		if (nm.find("materials/walls/simple/mat.material.xml") == std::string::npos)
 			continue;
 		auto m_samplerIndex = h3dFindResElem(mat, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "matSpecParams");
 		if (m_samplerIndex != -1)
@@ -201,6 +208,11 @@ void detectMaterials()
 			matres.push_back(mat);
 		}
 	}
+	postmatres  = h3dFindResource(H3DResTypes::Material, "pipelines/postHDR.material.xml");
+	postmatuniforms.exposure = h3dFindResElem(postmatres, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "hdrExposure");
+	postmatuniforms.thres = h3dFindResElem(postmatres, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "hdrBrightThres");
+	postmatuniforms.offset = h3dFindResElem(postmatres, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "hdrBrightOffset");
+
 }
 void dumph3dMessages()
 {
@@ -543,10 +555,21 @@ void alve_editor_draw_material_controls()
 		h3dSetResParamF(mt, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 2, col[2]);
 		h3dSetResParamF(mt, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 3, colw);
 	}
-	
+	ImGui::End();
+	ImGui::Begin("HDR params");
+	float exp = h3dGetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.exposure, H3DMatRes::UnifValueF4, 0);
+	float tres = h3dGetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.thres, H3DMatRes::UnifValueF4, 0);
+	float offset = h3dGetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.offset, H3DMatRes::UnifValueF4, 0);
+	ImGui::DragFloat("Exposure", &exp, 0.01);
+	ImGui::DragFloat("Threshold", &tres, 0.01);
+	ImGui::DragFloat("Offset", &offset, 0.01);
 
+	h3dSetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.exposure, H3DMatRes::UnifValueF4, 0,exp);
+	h3dSetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.thres, H3DMatRes::UnifValueF4, 0, tres);
+	h3dSetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.offset, H3DMatRes::UnifValueF4, 0, offset);
 
 	ImGui::End();
+
 }
 void draw_particle_editor()
 {
