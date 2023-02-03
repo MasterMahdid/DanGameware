@@ -233,25 +233,28 @@ Vector3df map_get_end_prop_value_as_color(std::string value)
 
 	return Vector3df(xx, yy, zz);
 }
-void addLight(Vector3df pos,Vector3df diff,float rad,float intensity,bool shadow)
+Vector3df map_get_end_prop_value_as_rotation(std::string value)
+{
+	auto of4 = value.find(" ");
+	auto of5 = value.find(" ", of4 + 1);
+	auto xx = std::atof(value.substr(0, of4).c_str());
+	auto yy = std::atof(value.substr(of4, of5 - of4).c_str());
+	auto zz = std::atof(value.substr(of5).c_str());
+	return Vector3df(xx, yy, zz);
+}
+
+void addLight(Vector3df pos, Vector3df rot,Vector3df diff,float rad,float intensity,bool shadow,float shadow_bias,float fov)
 {
 	auto light = h3dAddLightNode(H3DRootNode, "Light1", 0, "LIGHTING", "SHADOWMAP");
-	h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
+	h3dSetNodeParamF(light, H3DLight::FovF, 0, fov);
 	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, rad);
 	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0, intensity);
-	if(shadow)
+	h3dSetNodeTransform(light, pos.x, pos.y, pos.z, rot.x, rot.y, rot.z, 1, 1, 1);
+	if (shadow)
 	{
 		h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 3);
-		h3dSetNodeParamF(light, H3DLight::FovF, 0, 90);
-		h3dSetNodeTransform(light, pos.x, pos.y, pos.z, -52, -165, 0, 1, 1, 1);
+		h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, shadow_bias);
 	}
-	else
-	{
-		h3dSetNodeTransform(light, pos.x, pos.y, pos.z, 0, -86, 0, 1, 1, 1);
-		h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
-	}
-	
-	h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, 0.003f);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 0, diff.x);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, diff.y);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 2, diff.z);
@@ -278,36 +281,44 @@ int add_light_from_map(const char* filename)
 		auto temp_str = map_find_ent_prop_in_string("origin", str, of, of_end);
 		auto pos = map_get_end_prop_value_as_position(temp_str);
 
+		Vector3df rot(0,0,0);
+		temp_str = map_find_ent_prop_in_string("angle", str, of, of_end);
+		if (temp_str != "")
+			rot = Vector3df(std::atof(temp_str.c_str()), 0, 0);
+		temp_str = map_find_ent_prop_in_string("angles", str, of, of_end);
+		if (temp_str != "")
+			rot = map_get_end_prop_value_as_rotation(temp_str);
+
 		Vector3df diff(1, 1, 1);
 		temp_str = map_find_ent_prop_in_string("diffuse_color", str, of, of_end);
 		if (temp_str != "")//diffuse_color is optional
-		{
 			diff = map_get_end_prop_value_as_color(temp_str);
-		}
 		
 		float radius = 100;
 		temp_str = map_find_ent_prop_in_string("radius", str, of, of_end);
 		if (temp_str != "")
-		{
 			radius = std::atof(temp_str.c_str());
-		}
 		float intensity=3;
 		temp_str = map_find_ent_prop_in_string("intensity", str, of, of_end);
 		if (temp_str != "")
-		{
 			intensity = std::atof(temp_str.c_str());
-		}
 
-		bool shadow = false;
-		temp_str = map_find_ent_prop_in_string("fog_power", str, of, of_end);
+		float fov = 360;
+		temp_str = map_find_ent_prop_in_string("fov", str, of, of_end);
 		if (temp_str != "")
-		{
-			f32 fog_power = std::atof(temp_str.c_str());
-			if (fog_power > 4)
-				shadow = true;
-		}
+			fov = std::atof(temp_str.c_str());
+		
+		bool shadow = false;
+		temp_str = map_find_ent_prop_in_string("shadow", str, of, of_end);
+		if (temp_str != "")
+			shadow = temp_str=="1";
 
-		addLight(pos,diff,radius, intensity,shadow);
+		float shadow_bias = 0.003;
+		temp_str = map_find_ent_prop_in_string("shadow_bias", str, of, of_end);
+		if (temp_str != "")
+			shadow_bias = std::atof(temp_str.c_str());
+
+		addLight(pos,rot,diff,radius, intensity,shadow,shadow_bias,fov);
 		lind++;
 		if (512 == lind)
 			break;

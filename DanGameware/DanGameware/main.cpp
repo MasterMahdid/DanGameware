@@ -490,20 +490,91 @@ int main(int argc, char** argv)
 	khsound::shutdown_sound();
 	return 0;
 }
-
-void alve_editor_draw_light_controls(H3DNode light, bool& out_select_closest_light)
+bool light_editor_open = true;
+void alve_editor_draw_light_controls()
 {
-	ImGui::Begin("Light Params");
-	float lx, ly, lz,rx,ry,rz;
-	h3dGetNodeTransform(light,&lx, &ly, &lz,&rx,&ry,&rz, nullptr, nullptr, nullptr);
+	
 
-	ImGui::DragFloat("Pos X", &lx, 1);
-	ImGui::DragFloat("Pos Y", &ly, 1);
-	ImGui::DragFloat("Pos Z", &lz, 1);
-	ImGui::DragFloat("Rot X", &rx, 1);
-	ImGui::DragFloat("Rot Y", &ry, 1);
-	ImGui::DragFloat("Rot Z", &rz, 1);
-	h3dSetNodeTransform(light, lx, ly, lz, rx, ry, rz, 1, 1, 1);
+	if (light_editor_open)
+		ImGui::Begin("Light Params", &light_editor_open);
+	else
+		return;
+
+
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+	ImGui::BeginChild("ChildL", ImVec2(0, 200), false, window_flags);
+	for (int n = 0; n < dynamic_lights.size(); n++)
+	{
+		char buf[32];
+		sprintf(buf, "Light %d", n);
+		if (ImGui::Selectable(buf, selected_light_idx == n))
+			selected_light_idx = n;
+	}
+	ImGui::EndChild();
+	ImGui::Separator();
+	bool closest = ImGui::Button("Closest");
+	ImGui::SameLine();
+	bool add = ImGui::Button("Add");
+	if (add)
+	{
+		float cx, cy, cz;
+		h3dGetNodeTransform(main_camera,&cx, &cy, &cz, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+		addLight(Vector3df(cx, cy, cz), Vector3df(), Vector3df(1, 1, 1), 200, 2, false, 0.001, 360);
+		selected_light_idx = dynamic_lights.size() - 1;
+	}
+	if (closest)
+	{
+		float min_dis = 0;
+		for (int i = 0; i < dynamic_lights.size(); i++)
+		{
+
+			float camx, camy, camz, lx, ly, lz;
+			h3dGetNodeTransform(main_camera, &camx, &camy, &camz, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+			h3dGetNodeTransform(dynamic_lights[i], &lx, &ly, &lz, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+			auto dist = (Vector3df(camx, camy, camz) - Vector3df(lx, ly, lz)).getLengthSQ();
+			if (i == 0 || dist < min_dis)
+			{
+				min_dis = dist;
+				selected_light_idx = i;
+			}
+		}
+	}
+	ImGui::SameLine();
+	if (dynamic_lights.size() > 0)
+	{
+		bool del = ImGui::Button("Delete");
+		if (del)
+			ImGui::OpenPopup("confirm_popup");
+	}
+	if (ImGui::BeginPopup("confirm_popup"))
+	{
+		ImGui::Text("Are you sure?");
+		bool yes = ImGui::Button("Yes");
+		if (yes)
+		{
+			auto light = dynamic_lights[selected_light_idx];
+			h3dRemoveNode(light);
+			dynamic_lights.erase(dynamic_lights.begin() + selected_light_idx);
+			if (selected_light_idx >= dynamic_lights.size())
+				selected_light_idx = dynamic_lights.size() - 1;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+	ImGui::Spacing();
+	ImGui::Separator();
+
+	if (dynamic_lights.size() == 0)
+		return;
+	H3DNode light = dynamic_lights[selected_light_idx];
+
+	float pos[3],rot[3];
+	h3dGetNodeTransform(light,pos, pos+1, pos+2,rot,rot+1,rot+2, nullptr, nullptr, nullptr);
+	dd_sphere(Vector3df(pos[0], pos[1], pos[2]),5,DD_RED);
+
+	ImGui::DragFloat3("Pos", pos);
+	ImGui::DragFloat3("Rot", rot);
+	h3dSetNodeTransform(light, pos[0], pos[1], pos[2], rot[0], rot[1], rot[2], 1, 1, 1);
 
 	float fov = h3dGetNodeParamF(light, H3DLight::FovF, 0);
 	ImGui::DragFloat("Fov", &fov, 1);
@@ -515,19 +586,30 @@ void alve_editor_draw_light_controls(H3DNode light, bool& out_select_closest_lig
 	
 	float col[3] = { colx,coly,colz};
 
-	ImGui::ColorEdit3("Diffuse color", col);
+	ImGui::ColorEdit3("Diff", col);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 0, col[0]);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, col[1]);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 2, col[2]);
 
 	float rad = h3dGetNodeParamF(light, H3DLight::RadiusF, 0);
-	ImGui::DragFloat("Radius", &rad);
+	ImGui::DragFloat("Rad", &rad);
 	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, rad);
 	
 	float mul = h3dGetNodeParamF(light, H3DLight::ColorMultiplierF, 0);
-	ImGui::DragFloat("Light intensity", &mul,0.01);
+	ImGui::DragFloat("Int", &mul,0.01);
 	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0, mul);
-	out_select_closest_light = ImGui::Button("Select closest light");
+
+	float bias = h3dGetNodeParamF(light, H3DLight::ShadowMapBiasF, 0);
+	ImGui::DragFloat("Bias", &bias, 0.0001);
+	h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, bias);
+	
+	bool shadow = h3dGetNodeParamI(light, H3DLight::ShadowMapCountI)>0;
+	ImGui::Checkbox("Shadow", &shadow);
+	if(shadow)
+		h3dSetNodeParamI(light, H3DLight::ShadowMapCountI,3);
+	else
+		h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 0);
+	
 	ImGui::End();
 }
 void alve_editor_draw_material_controls()
@@ -656,32 +738,10 @@ void imgui_frame()
 	if (edit_mode)
 	{
 		//ImGui::ShowDemoWindow();
-		alve_draw_options_menu();
-		alve_editor_draw_material_controls();
-		khshowConsole();
-		bool select_closest_light = false;
-		if (dynamic_lights.size() > 0)
-		{
-			alve_editor_draw_light_controls(dynamic_lights[selected_light_idx], select_closest_light);
-		}
-
-		if (select_closest_light)
-		{
-			float min_dis = 0;
-			for (int i = 0; i < dynamic_lights.size(); i++)
-			{
-
-				float camx, camy, camz, lx, ly, lz;
-				h3dGetNodeTransform(main_camera, &camx, &camy, &camz, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
-				h3dGetNodeTransform(dynamic_lights[i], &lx, &ly, &lz, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
-				auto dist = (Vector3df(camx, camy, camz) - Vector3df(lx, ly, lz)).getLengthSQ();
-				if (i == 0 || dist < min_dis)
-				{
-					min_dis = dist;
-					selected_light_idx = i;
-				}
-			}
-		}
+		//alve_draw_options_menu();
+		//alve_editor_draw_material_controls();
+		//khshowConsole();
+		alve_editor_draw_light_controls();
 	}
 }
 

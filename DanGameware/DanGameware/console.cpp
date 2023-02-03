@@ -340,7 +340,8 @@ ConsoleWindow g_console_window;
 void khshowConsole()
 {
 	static bool popen=true;
-	g_console_window.Draw("Console", &popen);
+	if(popen)
+		g_console_window.Draw("Console", &popen);
 }
 
 
