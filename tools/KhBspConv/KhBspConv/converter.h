@@ -53,11 +53,11 @@ public:
 	Converter(khbsp::CQ3LevelMesh	*bspmesh , const std::string &outPath,const std::string& baseq3);
 	~Converter();
 
-	void processMeshes(bool optimize);
+	void processMeshes(bool optimize, bool fix_split_seems);
 	bool writeModel(const std::string &assetPath, const std::string &assetName,std::string entity_xml) const;
 
 private:
-	void calcTangentSpaceBasis(std::vector< Vertex > &vertices) const;
+	void calcTangentSpaceBasis(std::vector< Vertex > &vertices, bool fix_split_seems) const;
 	bool writeGeometry(const std::string &assetPath, const std::string &assetName) const;
 
 private:

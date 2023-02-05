@@ -57,7 +57,7 @@ Converter::~Converter() {}
 
 
 
-void Converter::calcTangentSpaceBasis(vector<Vertex> &verts) const
+void Converter::calcTangentSpaceBasis(vector<Vertex> &verts, bool fix_split_seems) const
 {
 	for (unsigned int i = 0; i < verts.size(); ++i)
 	{
@@ -94,15 +94,19 @@ void Converter::calcTangentSpaceBasis(vector<Vertex> &verts) const
 					verts[_indices[k + l]].bitangent += vDir;
 
 					// Handle texture seams where vertices were split
-					for (auto m : triGroup->vertIndexes)
+					if (fix_split_seems)
 					{
-						if (m != _indices[k + l] && verts[m].storedNormal == verts[_indices[k + l]].storedNormal)
+						for (auto m : triGroup->vertIndexes)
 						{
-							verts[m].normal += normal;
-							//verts[m].tangent += uDir;
-							//verts[m].bitangent += vDir;
+							if (m != _indices[k + l] && verts[m].storedNormal == verts[_indices[k + l]].storedNormal)
+							{
+								verts[m].normal += normal;
+								//verts[m].tangent += uDir;
+								//verts[m].bitangent += vDir;
+							}
 						}
 					}
+					
 				}
 			}
 		}
@@ -130,7 +134,7 @@ void Converter::calcTangentSpaceBasis(vector<Vertex> &verts) const
 	if (numInvalidBasis > 0)
 	{
 		printf("Warning: Geometry has zero-length basis vectors");
-		printf("Maybe two faces point in opposite directions and share same vertices");
+		printf("Maybe two faces point in opposite directions and share same vertices\n");
 	}
 }
 void fill_hord_vert_from_irr(Vertex& v, const irr::video::S3DVertex2TCoords& s)
@@ -148,7 +152,7 @@ void fill_hord_vert_from_irr(Vertex& v, const irr::video::S3DVertex2TCoords& s)
 		printf("zero length normal");
 	}
 }
-void Converter::processMeshes(bool optimize)
+void Converter::processMeshes(bool optimize,bool fix_split_seems)
 {
 	_meshes.push_back(new Mesh());
 
@@ -209,7 +213,7 @@ void Converter::processMeshes(bool optimize)
 		unsigned int numDegTris = MeshOptimizer::removeDegeneratedTriangles(oTriGroup, _vertices, _indices);
 		_meshes[0]->triGroups.push_back(oTriGroup);
 	}
-	calcTangentSpaceBasis(_vertices);
+	calcTangentSpaceBasis(_vertices, fix_split_seems);
 
 	// Optimization and clean up
 	float optEffBefore = 0, optEffAfter = 0;
@@ -301,10 +305,10 @@ bool Converter::writeGeometry(const string &assetPath, const string &assetName) 
 			{
 				auto tv = _vertices[j].tangent.normalized();
 				auto vs = _vertices[j].tangent;
-				if (((short)(tv.x * 32767)) == 0 && ((short)(tv.y * 32767))==0 && ((short)(tv.z * 32767))==0)
+				/*if (((short)(tv.x * 32767)) == 0 && ((short)(tv.y * 32767))==0 && ((short)(tv.z * 32767))==0)
 				{
 					printf("%d============ bad error==============\n",j);
-				}
+				}*/
 				sh = (short)(_vertices[j].tangent.x * 32767); fwrite_le<short>(&sh, 1, f);
 				sh = (short)(_vertices[j].tangent.y * 32767); fwrite_le<short>(&sh, 1, f);
 				sh = (short)(_vertices[j].tangent.z * 32767); fwrite_le<short>(&sh, 1, f);

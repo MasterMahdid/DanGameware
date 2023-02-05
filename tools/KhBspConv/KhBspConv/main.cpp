@@ -3,11 +3,14 @@
 #include "converter.h"
 #include <Windows.h>
 #include "CQ3LevelMesh.h"
+#include <chrono>
+#include <iostream>
 using namespace irr;
 
 IrrlichtDevice *device;
 int main(int argc, char** argv)
 {
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	auto baseq3 = std::getenv("ALVAHSHI_BASEQ3");
 	auto contentfolder = std::getenv("ALVAHSHI_CONTENT");
 	if (baseq3 == nullptr || contentfolder == nullptr)
@@ -21,12 +24,12 @@ int main(int argc, char** argv)
 		return 2;
 	}
 	auto mapname = argv[1];
-	
+
 
 	device = createDevice(video::EDT_NULL);
 	auto* smgr = device->getSceneManager();
 	auto fs = device->getFileSystem();
-	
+
 	char outdir[MAX_PATH];
 	sprintf(outdir, "%s\\maps\\%s\\", contentfolder, mapname);
 	bool direxists = fs->existFile(outdir);
@@ -46,7 +49,7 @@ int main(int argc, char** argv)
 	irr::scene::quake3::Q3LevelLoadParameter LoadParam;
 	auto mesh = new khbsp::CQ3LevelMesh(fs, smgr, LoadParam); //(scene::IQ3LevelMesh*) smgr->getMesh(mappath);
 	mesh->loadFile(fs->createAndOpenFile(mappath));
-	
+
 	std::string entity_xml;
 	irr::scene::quake3::tQ3EntityList &entityList = mesh->getEntityList();
 	for (int i = 0; i < entityList.size(); i++)
@@ -60,7 +63,7 @@ int main(int argc, char** argv)
 			{
 				auto v = gp->Variable[k];
 				auto cc = v.name.c_str();
-				auto vv  = v.content.c_str();
+				auto vv = v.content.c_str();
 
 				char buf[256];
 				sprintf(buf, " %s=\"%s\"", cc, vv);
@@ -70,9 +73,9 @@ int main(int argc, char** argv)
 		entity_xml += "/>\n";
 	}
 	char cf[MAX_PATH];
-	sprintf(cf,"%s\\", contentfolder);
-	Converter c(mesh, cf,baseq3);
-	c.processMeshes(false);
+	sprintf(cf, "%s\\", contentfolder);
+	Converter c(mesh, cf, baseq3);
+	c.processMeshes(false,false);
 
 	char assetpath[MAX_PATH];
 	sprintf(assetpath, "maps\\%s\\", mapname);
@@ -80,13 +83,22 @@ int main(int argc, char** argv)
 
 
 	//copy lightmaps
-	printf("Copy lightmaps");
+	printf("Copy lightmaps\n");
 	char lightmaps_dir[1024];
 	sprintf(lightmaps_dir, "%s\\maps\\%s\\lm_*", baseq3, mapname);
-	
+
 	char command[2048];
 	sprintf(command, "xcopy \"%s\" \"%s\\%s\" /i /y", lightmaps_dir, contentfolder, assetpath);
 	system(command);
+
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	auto secs = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
+	auto mss = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+	if(secs>0)
+		std::cout << "took " << secs << "s" << std::endl;
+	else
+		std::cout << "took " << mss << "ms" << std::endl;
+
 
 	return 0;
 }
