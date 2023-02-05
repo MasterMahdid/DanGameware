@@ -3,11 +3,14 @@
 #include "converter.h"
 #include <Windows.h>
 #include "CQ3LevelMesh.h"
+#include <chrono>
+#include <iostream>
 using namespace irr;
 
 IrrlichtDevice *device;
 int main(int argc, char** argv)
 {
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	auto baseq3 = std::getenv("ALVAHSHI_BASEQ3");
 	auto contentfolder = std::getenv("ALVAHSHI_CONTENT");
 	if (baseq3 == nullptr || contentfolder == nullptr)
@@ -87,6 +90,9 @@ int main(int argc, char** argv)
 	char command[2048];
 	sprintf(command, "xcopy \"%s\" \"%s\\%s\" /i /y", lightmaps_dir, contentfolder, assetpath);
 	system(command);
+
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	std::cout << "took " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[s]" << std::endl;
 
 	return 0;
 }

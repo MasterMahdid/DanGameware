@@ -752,7 +752,7 @@ namespace khbsp
 
 			for (i = 0; i < E_Q3_MESH_SIZE; i++)
 			{
-				newmesh[i] = new KhMesh();
+				newmesh[i] = new KhMesh(1024);
 			}
 
 			s32 *index;
@@ -859,7 +859,7 @@ namespace khbsp
 							buffer->texture = this->Textures[Faces[i].textureID].strName;
 							buffer->textureID = Faces[i].textureID;
 							buffer->lightmapID = Faces[i].lightmapID;
-							newmesh[item[g].index]->buffers.push_back(buffer);
+							newmesh[item[g].index]->addBuffer(buffer);
 							
 						}
 					}
@@ -1483,10 +1483,7 @@ namespace khbsp
 			{
 				if (LoadParam.verbose > 1)
 				{
-					snprintf(buf, sizeof(buf),
-						"quake3::cleanMeshes start for %d meshes",
-						m->buffers.size()
-					);
+					snprintf(buf, sizeof(buf),"quake3::cleanMeshes start for %d meshes",m->getLen());
 				}
 			}
 
@@ -1494,15 +1491,14 @@ namespace khbsp
 			s32 blockstart = -1;
 			s32 blockcount = 0;
 
-			while (i < m->buffers.size())
+			while (i < m->getLen())
 			{
 				run += 1;
 
-				b = m->buffers[i];
+				b = m->getItem(i);
 
 				if (b->Vertices.size() == 0 || b->Indices.size() == 0 ||
-					(texture0important && b->texture == 0)
-					)
+					(texture0important && b->texture == 0))
 				{
 					if (blockstart < 0)
 					{
@@ -1513,10 +1509,9 @@ namespace khbsp
 					i += 1;
 
 					// delete Meshbuffer
-					i -= 1;
 					remove += 1;
 					//b->drop();//todo delete b
-					m->buffers.erase(m->buffers.begin() + i);
+					m->removeAt(i);
 				}
 				else
 				{
@@ -1525,11 +1520,7 @@ namespace khbsp
 					{
 						if (LoadParam.verbose > 1)
 						{
-							snprintf(buf, sizeof(buf),
-								"quake3::cleanMeshes cleaning mesh %d %d size",
-								blockstart,
-								blockcount
-							);
+							snprintf(buf, sizeof(buf),"quake3::cleanMeshes cleaning mesh %d %d size",blockstart,blockcount);
 						}
 						blockstart = -1;
 					}
@@ -1546,6 +1537,11 @@ namespace khbsp
 					run
 				);
 			}
+			if (true || remove > 0)
+			{
+				m->purgeNulls();
+			}
+				
 		}
 
 } // end namespace scene

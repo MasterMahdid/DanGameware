@@ -6,7 +6,6 @@
 #ifndef __C_Q3_LEVEL_MESH_H_INCLUDED__
 #define __C_Q3_LEVEL_MESH_H_INCLUDED__
 #include <stdlib.h>
-#include <vector>
 #include "IQ3LevelMesh.h"
 #include "IReadFile.h"
 #include "IFileSystem.h"
@@ -48,15 +47,52 @@ namespace khbsp
 	};
 	struct KhMesh
 	{
-		std::vector<KhMeshBuffer*> buffers;
+		private:
+			KhMeshBuffer** buffers;
+			size_t buffers_len;
+			size_t cap;
+		public:
+		KhMesh(size_t _cap)
+		{
+			cap = _cap;
+			buffers_len = 0;
+			buffers = (KhMeshBuffer**)malloc(sizeof(KhMeshBuffer*)*cap);
+		}
+		KhMesh(const KhMesh&) = delete;
+		KhMesh& operator=(KhMesh const&) = delete;
 		KhMeshBuffer* getMeshBuffer(s32 texture_id, s32 lightmap_id)
 		{
-			for (const auto& b : buffers)
+			for (size_t i = 0; i < buffers_len;i++)
 			{
+				KhMeshBuffer* b = buffers[i];
 				if (b->textureID == texture_id && b->lightmapID == lightmap_id)
 					return b;
 			}
 			return nullptr;
+		}
+		KhMeshBuffer* getItem(size_t i)
+		{
+			return buffers[i];
+		}
+		void addBuffer(KhMeshBuffer* b)
+		{
+			buffers[buffers_len] = b;
+			buffers_len++;
+		}
+		void removeAt(size_t i)
+		{
+			buffers[i] == nullptr;
+		}
+		void purgeNulls()
+		{
+			size_t l = buffers_len;
+			buffers_len = 0;
+			for (size_t i = 0; i < l; i++)if (buffers[i] != nullptr)
+				buffers[buffers_len++] = buffers[i];
+		}
+		size_t getLen()
+		{
+			return buffers_len;
 		}
 	};
 	using namespace irr::scene;
