@@ -186,7 +186,7 @@ void Converter::processMeshes(bool optimize,bool fix_split_seems)
 		auto lightmap_id = iTriGroup->lightmapID;
 
 		std::string name = iTriGroup->texture;
-		name = name.substr(strlen("textures/"));
+		//name = name.substr(strlen("textures/"));
 		oTriGroup->matName = name;
 
 		oTriGroup->modelNum = iTriGroup->modelNum;
@@ -375,9 +375,19 @@ bool Converter::writeGeometry(const string &assetPath, const string &assetName) 
 const char* mat_out_folder = "models/bsptextures/materials/";
 std::string getxmlMatPath(std::string matname, std::string outpath)
 {
-	std::string res = "materials/"+ matname;
-	res = res+ "/mat.material.xml";
-	return res;
+	if (matname.substr(0, 9) == "textures/")
+	{
+		std::string res = "materials/" + matname.substr(strlen("textures/"));
+		res = res + "/mat.material.xml";
+		return res;
+	}
+	if (matname.substr(0, 7) == "models/")
+	{
+		std::string res = matname+ ".material.xml";
+		return res;
+	}
+	printf("Warning unknown material %s", matname.c_str());
+	
 
 }
 inline bool exists_test1(const std::string& name) {
