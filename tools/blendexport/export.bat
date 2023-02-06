@@ -1,0 +1,1 @@
+blender stonepillar.blend --background --python export.py -- stonepillar.obj
