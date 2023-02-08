@@ -16,7 +16,13 @@
 #include <GLFW/glfw3.h>
 #include "filesystem.h"
 
-
+struct DynamicModel
+{
+	Vector3df pos;
+	Vector3df scale;
+	Vector3df rot;
+	std::string model;
+};
 
 
 
@@ -31,13 +37,18 @@ std::vector<std::string> lms;
 int add_light_from_map(const char* filename);
 int add_player_from_map(const char* filename);
 int add_enemy_from_map(const char* filename);
+std::vector<DynamicModel> loadModelsFromMap(const char* filename);
+
 
 
 void removeAll()
 {
 	//TODO: implement this correctly
-	for (int i = 3;i<10000; i++)
+	for (int i = 3;;i++)
 	{
+		H3DNode ch = h3dGetNodeChild(H3DRootNode, i);
+		if (ch == 0)
+			break;
 		h3dRemoveNode(i);
 	}
 	
@@ -55,8 +66,17 @@ void mapPreload(const char* name, std::function<void()> update)
 	char scene_path[1024];
 	sprintf(scene_path, "maps/%s/%s.scene.xml", name, name);
 
+	char mapfn[1024];
+	sprintf(mapfn, "maps/%s/%s.map", name, name);
+
 	level_mesh_res = h3dAddResource(H3DResTypes::Geometry, geo_path, 0);
 	envRes = h3dAddResource(H3DResTypes::SceneGraph, scene_path, 0);
+
+	auto dyn = loadModelsFromMap(mapfn);
+	for (const auto& s : dyn)
+	{
+		h3dAddResource(H3DResTypes::SceneGraph, s.model.c_str(), 0);
+	}
 
 	//TODO unload lightmaps
 	h3dUnloadResource(level_mesh_res);
@@ -114,6 +134,17 @@ void mapLoad(const char* name, std::function<void()> update)
 	H3DNode env = h3dAddNodes(H3DRootNode, envRes);
 	h3dSetNodeTransform(env, 0, 0, 0, 0, 0, 0, 1, 1, 1);
 
+	char mapfn[1024];
+	sprintf(mapfn, "maps/%s/%s.map", name, name);
+	auto dyn = loadModelsFromMap(mapfn);
+	for (const auto s : dyn)
+	{
+		H3DNode par = h3dAddGroupNode(H3DRootNode, "");
+		H3DRes res = h3dAddResource(H3DResTypes::SceneGraph, s.model.c_str(), 0);
+		H3DNode node = h3dAddNodes(par, res);
+		h3dSetNodeTransform(par, s.pos.x, s.pos.y, s.pos.z, s.rot.x, s.rot.y, s.rot.z, s.scale.x, s.scale.y, s.scale.z);
+	}
+
 	int num = h3dFindNodes(env, "", H3DNodeTypes::Mesh);
 	//int num = lms.size();
 	for (size_t i = 0; i < num; i++)
@@ -156,7 +187,7 @@ void mapLoad(const char* name, std::function<void()> update)
 
 		delete[] data;
 		
-
+		
 		h3dSetNodeParamI(node, H3DMesh::MatResI, mat2res);
 
 
@@ -183,14 +214,13 @@ void mapLoad(const char* name, std::function<void()> update)
 	g_entities_len = 0;
 	
 	
-	char mapfn[1024];
-	sprintf(mapfn, "maps/%s/%s.map",name,name);
+	
 	
 	add_light_from_map(mapfn);
 	add_player_from_map(mapfn);
-	//add_enemy_from_map(mapfn);
+	add_enemy_from_map(mapfn);
+	
 	//khsound::play_sound(khsound::E1M1_MUSIC,1,true);
-
 }
 std::string map_find_ent_prop_in_string(const char* key, const std::string& str, size_t start, size_t end)
 {
@@ -240,7 +270,7 @@ Vector3df map_get_end_prop_value_as_rotation(std::string value)
 	auto xx = std::atof(value.substr(0, of4).c_str());
 	auto yy = std::atof(value.substr(of4, of5 - of4).c_str());
 	auto zz = std::atof(value.substr(of5).c_str());
-	return Vector3df(xx, yy, zz);
+	return Vector3df(zz, -yy, -xx);
 }
 
 void addLight(Vector3df pos, Vector3df rot,Vector3df diff,float rad,float intensity,bool shadow,float shadow_bias,float fov)
@@ -382,4 +412,70 @@ int add_enemy_from_map(const char* filename)
 		gameObjects_array.push_back(emn);
 	}
 	return lind;
+}
+std::vector<DynamicModel> loadModelsFromMap(const char* filename)
+{
+	std::vector<DynamicModel> ret;
+	size_t sz;
+	auto r = g_archive_reader.loadFileData(filename, sz);
+	std::string str((char*)r, sz);
+	size_t of = 0;
+	int lind = 0;
+	while (true)
+	{
+		of = str.find("\"classname\" \"misc_model_2\"", of + 1);
+		if (of == std::string::npos)
+			break;
+		DynamicModel m;
+
+		auto of_end = str.find("}", of);
+		auto temp_str = map_find_ent_prop_in_string("origin", str, of, of_end);
+		auto pos = map_get_end_prop_value_as_position(temp_str);
+		m.pos = pos;
+
+		
+		temp_str = map_find_ent_prop_in_string("modelscale_vec", str, of, of_end);
+		if (temp_str != "")
+		{
+			m.scale = map_get_end_prop_value_as_position(temp_str);
+			m.scale.x = abs(m.scale.x);
+			m.scale.y = abs(m.scale.y);
+			m.scale.z = abs(m.scale.z);
+		}
+		else
+		{
+			temp_str = map_find_ent_prop_in_string("modelscale", str, of, of_end);
+			float scale = 1;
+			if (temp_str != "")
+			{
+				scale = std::atof(temp_str.c_str());
+				m.scale = Vector3df(scale, scale, scale);
+			}
+		}
+
+		
+		temp_str = map_find_ent_prop_in_string("angles", str, of, of_end);
+		if (temp_str != "")
+		{
+			m.rot = map_get_end_prop_value_as_rotation(temp_str);
+		}
+		else
+		{
+			temp_str = map_find_ent_prop_in_string("angle", str, of, of_end);
+			float angle = 0;
+			if (temp_str != "")
+			{
+				angle = std::atof(temp_str.c_str());
+				m.rot = Vector3df(0, -angle, 0);
+			}
+		}
+
+		temp_str = map_find_ent_prop_in_string("model", str, of, of_end);
+
+		auto model = temp_str.substr(0, temp_str.length() - 3) + std::string("scene.xml");
+		
+		m.model = model;
+		ret.push_back(m);
+	}
+	return ret;
 }

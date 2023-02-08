@@ -229,6 +229,7 @@ namespace khbsp
 
 			file->seek(l->offset);
 			file->read(Vertices, l->length);
+			
 
 			if (LoadParam.swapHeader)
 				for (s32 i = 0; i<NumVertices; i++)
@@ -237,12 +238,18 @@ namespace khbsp
 					Vertices[i].vPosition[1] = byteswap(Vertices[i].vPosition[1]);
 					Vertices[i].vPosition[2] = byteswap(Vertices[i].vPosition[2]);
 					Vertices[i].vTextureCoord[0] = byteswap(Vertices[i].vTextureCoord[0]);
-					Vertices[i].vTextureCoord[1] = byteswap(Vertices[i].vTextureCoord[1]);
+					Vertices[i].vTextureCoord[1] = byteswap(Vertices[i].vTextureCoord[1]*-1);
 					Vertices[i].vLightmapCoord[0] = byteswap(Vertices[i].vLightmapCoord[0]);
-					Vertices[i].vLightmapCoord[1] = byteswap(Vertices[i].vLightmapCoord[1]);
+					Vertices[i].vLightmapCoord[1] = byteswap(Vertices[i].vLightmapCoord[1]*1);
 					Vertices[i].vNormal[0] = byteswap(Vertices[i].vNormal[0]);
 					Vertices[i].vNormal[1] = byteswap(Vertices[i].vNormal[1]);
 					Vertices[i].vNormal[2] = byteswap(Vertices[i].vNormal[2]);
+				}
+			else
+				for (s32 i = 0; i < NumVertices; i++)
+				{
+					Vertices[i].vTextureCoord[1] *= -1;
+					Vertices[i].vLightmapCoord[1] *= -1;
 				}
 		}
 

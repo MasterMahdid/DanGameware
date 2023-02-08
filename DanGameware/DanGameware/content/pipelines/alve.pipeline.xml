@@ -19,6 +19,10 @@
 		<Stage id="Translucent">
 			<DrawGeometry context="TRANSLUCENT" class="Translucent" order="BACK_TO_FRONT" />
 		</Stage>
+
+		<Stage id="Lighting">
+			<DoForwardLightLoop class="Translucent" />
+		</Stage>
 		
 		<!-- HDR post processing -->
 		<Stage id="BrightPass">

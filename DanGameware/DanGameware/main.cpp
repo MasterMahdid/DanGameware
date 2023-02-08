@@ -32,10 +32,10 @@ Tween g_tween;
 
 
 
-#define WINDOW_WIDTH (1920)
-#define WINDOW_HEIGHT (1080)
-#define FULL_SCREEN (1)
-#define MSAA_C (4)
+#define WINDOW_WIDTH (1600)
+#define WINDOW_HEIGHT (900)
+#define FULL_SCREEN (0)
+#define MSAA_C (8)
 #define V_SYNC (1)
 
 H3DNode main_camera = 0;
@@ -185,12 +185,33 @@ bool isKeyDown(int key)
 std::vector<H3DRes> matres;
 int specunifind;
 
+std::vector<H3DRes> watermats;
+int waterparamsunifind;
+
 H3DRes postmatres;
 struct PostmatUniformIDs
 {
 	int exposure, thres, offset;
 };
 PostmatUniformIDs postmatuniforms;
+void initWaterShader()
+{
+	H3DRes mat = 0;
+	watermats.clear();
+	while (mat = h3dGetNextResource(H3DResTypes::Material, mat))
+	{
+		std::string nm = h3dGetResName(mat);
+		if (nm.find("materials/water/dirtywater/mat.material.xml") == std::string::npos)
+			continue;
+		auto m_samplerIndex = h3dFindResElem(mat, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "waterParams");
+		if (m_samplerIndex != -1)
+		{
+			printf("%d,%s\n", m_samplerIndex, h3dGetResName(mat));
+			waterparamsunifind = m_samplerIndex;
+			watermats.push_back(mat);
+		}
+	}
+}
 void detectMaterials()
 {
 	H3DRes mat = 0;
@@ -198,7 +219,7 @@ void detectMaterials()
 	while (mat=h3dGetNextResource(H3DResTypes::Material, mat))
 	{
 		std::string nm = h3dGetResName(mat);
-		if (nm.find("materials/walls/simple/mat.material.xml") == std::string::npos)
+		if (nm.find("materials/water/dirtywater/mat.material.xml") == std::string::npos)
 			continue;
 		auto m_samplerIndex = h3dFindResElem(mat, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "matSpecParams");
 		if (m_samplerIndex != -1)
@@ -208,10 +229,10 @@ void detectMaterials()
 			matres.push_back(mat);
 		}
 	}
-	postmatres  = h3dFindResource(H3DResTypes::Material, "pipelines/postHDR.material.xml");
+	/*postmatres  = h3dFindResource(H3DResTypes::Material, "pipelines/postHDR.material.xml");
 	postmatuniforms.exposure = h3dFindResElem(postmatres, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "hdrExposure");
 	postmatuniforms.thres = h3dFindResElem(postmatres, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "hdrBrightThres");
-	postmatuniforms.offset = h3dFindResElem(postmatres, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "hdrBrightOffset");
+	postmatuniforms.offset = h3dFindResElem(postmatres, H3DMatRes::UniformElem, H3DMatRes::UnifNameStr, "hdrBrightOffset");*/
 
 }
 void dumph3dMessages()
@@ -264,7 +285,7 @@ void initGame(int winWidth, int winHeight)
 	//h3dSetNodeParamI(main_camera, H3DCamera::OccCullingI, 1);
 	h3dSetNodeParamI(main_camera, H3DCamera::ViewportWidthI, winWidth);
 	h3dSetNodeParamI(main_camera, H3DCamera::ViewportHeightI, winHeight);
-	h3dSetupCameraView(main_camera, 80.0f, (float)winWidth / winHeight, 1, 30000);
+	h3dSetupCameraView(main_camera, 70.0f, (float)winWidth / winHeight, 1, 30000);
 	h3dResizePipelineBuffers(pipeRes, winWidth, winHeight);
 	
 }
@@ -274,8 +295,10 @@ void updateEmitters(float dt)
 	for (unsigned int i = 0; i < cnt; ++i)
 		h3dUpdateEmitter(h3dGetNodeFindResult(i), dt);
 }
+float t_total_time = 0;
 void gameupdate(float dt)
 {
+	t_total_time += dt;
 	if(!edit_mode)
 		g_input.capture(_winHandle);
 	//ai
@@ -298,6 +321,12 @@ void gameupdate(float dt)
 	}
 	g_tween.update(dt);
 	updateEmitters(dt);
+	
+	for (const auto& c : watermats)
+	{
+		h3dSetResParamF(c, H3DMatRes::UniformElem, waterparamsunifind, H3DMatRes::UnifValueF4,0, t_total_time);
+	}
+
 	khsound::updateCamPos(main_camera);
 
 	//phdt = glfwGetTime() - t;
@@ -404,8 +433,9 @@ void main_load_map()
 {
 	g_tween = Tween();
 	auto t1 = glfwGetTime();
-	mapLoad("esatwall", &mapLoadUpdate);
+	mapLoad("doomed", &mapLoadUpdate);
 	detectMaterials();
+	initWaterShader();
 	dw_console_log("map load time = %0.2f", glfwGetTime() - t1);
 }
 bool do_reload_map = false;
@@ -614,7 +644,6 @@ void alve_editor_draw_light_controls()
 }
 void alve_editor_draw_material_controls()
 {
-	
 	ImGui::Begin("Material Params");
 	if (matres.size() == 0)
 	{
@@ -638,7 +667,7 @@ void alve_editor_draw_material_controls()
 		h3dSetResParamF(mt, H3DMatRes::UniformElem, specunifind, H3DMatRes::UnifValueF4, 3, colw);
 	}
 	ImGui::End();
-	ImGui::Begin("HDR params");
+	/*ImGui::Begin("HDR params");
 	float exp = h3dGetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.exposure, H3DMatRes::UnifValueF4, 0);
 	float tres = h3dGetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.thres, H3DMatRes::UnifValueF4, 0);
 	float offset = h3dGetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.offset, H3DMatRes::UnifValueF4, 0);
@@ -650,7 +679,7 @@ void alve_editor_draw_material_controls()
 	h3dSetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.thres, H3DMatRes::UnifValueF4, 0, tres);
 	h3dSetResParamF(postmatres, H3DMatRes::UniformElem, postmatuniforms.offset, H3DMatRes::UnifValueF4, 0, offset);
 
-	ImGui::End();
+	ImGui::End();*/
 
 }
 void draw_particle_editor()
@@ -724,6 +753,7 @@ void alve_draw_options_menu()
 	ImGui::Button("Apply");
 	ImGui::End();
 }
+
 void khshowConsole();
 void imgui_frame()
 {
@@ -739,8 +769,8 @@ void imgui_frame()
 	{
 		//ImGui::ShowDemoWindow();
 		//alve_draw_options_menu();
-		//alve_editor_draw_material_controls();
-		//khshowConsole();
+		alve_editor_draw_material_controls();
+		khshowConsole();
 		alve_editor_draw_light_controls();
 	}
 }

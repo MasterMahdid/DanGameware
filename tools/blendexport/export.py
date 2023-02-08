@@ -3,7 +3,7 @@ import sys
 import os
 import re
 import shutil
-config = {'name':'pillars/stonepillar',"dynamic":True}
+config = {'name':'pillars/stonepillar'}
 name=config['name']
 fn = sys.argv[-1]
 basename= os.path.splitext(fn)[0]
@@ -29,12 +29,13 @@ with open(matfn, 'w') as file:
 	file.write(data)
 
 #h3d export, blend->fbx->dae->h3d
-fbxfn = basename+".fbx"
-bpy.ops.export_scene.fbx(filepath=fbxfn)
+#fbxfn = basename+".fbx"
+#bpy.ops.export_scene.fbx(filepath=fbxfn)
 
 daefn = basename+".dae"
-cmd = "noesis ?cmode %s %s"%(fbxfn,daefn)
-os.system(cmd)
+bpy.ops.wm.collada_export(filepath=daefn)
+#cmd = "noesis ?cmode %s %s"%(fn,daefn)
+#os.system(cmd)
 
 cmd = "khcol %s -type model "%(daefn)
 os.system(cmd)
@@ -48,8 +49,8 @@ shutil.copyfile(geofn, model_content_path+"/"+geofn)
 all_mat_files = []
 with open(scenefn, 'r') as file:
 	data = file.read()
-	data = data.replace('name="stonepillar"','name="%s"'%(name))
-	data = data.replace('geometry="stonepillar.geo"','geometry="%s"'%('models/'+name+'/'+geofn))
+	data = data.replace('name="%s"'%(basename),'name="%s"'%(name))
+	data = data.replace('geometry="%s.geo"'%(basename),'geometry="%s"'%('models/'+name+'/'+geofn))
 	for m in re.finditer('material="',data):
 		s = m.start()+10;
 		mname = data[s:s+data[s:].find('"')]
@@ -63,6 +64,7 @@ with open(scenefn, 'r') as file:
 			expmatname = expmatname+".material.xml"
 			all_mat_files.append(expmatname)
 			mdata = mdata.replace(albedo_map,'models/'+name+'/'+albedo_map)
+			mdata = mdata.replace("model.shader","model_org.shader")
 			with open(expmatname, 'w') as file:
 				file.write(mdata)
 			if os.path.exists(model_content_path+"/"+expmatname)==False:
@@ -97,9 +99,10 @@ with open(matfn, 'w') as file:
 shutil.copyfile(fn, basealv+'/models/'+name+"/"+fn)
 shutil.copyfile(matfn, basealv+'/models/'+name+"/"+matfn)
 
+#quit()
 os.remove(fn)
 os.remove(daefn)
-os.remove(fbxfn)
+#os.remove(fbxfn)
 os.remove(matfn)
 os.remove(scenefn)
 os.remove(geofn)

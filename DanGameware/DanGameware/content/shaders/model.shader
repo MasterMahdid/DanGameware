@@ -9,6 +9,8 @@
 	_F05_AlphaTest
 	_F06_SPECMAP
 	_F07_DECAL
+	_F08_WATER
+
 */
 
 
@@ -66,6 +68,13 @@ float4 matSpecParams <
 	string desc_d   = "d: gloss";
 > = {0.04, 0.04, 0.04, 0.35};
 
+float4 waterParams <
+	string desc_abc = "abc: ";
+	string desc_d   = "d: time";
+> = {0, 0, 0, 0};
+
+
+
 // Contexts
 
 context SHADOWMAP
@@ -87,6 +96,14 @@ context AMBIENT
 {
 	VertexShader = compile GLSL VS_GENERAL;
 	PixelShader = compile GLSL FS_AMBIENT;
+}
+context TRANSLUCENT
+{
+	VertexShader = compile GLSL VS_GENERAL;
+	PixelShader = compile GLSL FS_AMBIENT;
+	
+	ZWriteEnable = false;
+	BlendMode = Blend;
 }
 
 
@@ -230,7 +247,7 @@ varying vec3 lightVec;
 void main( void )
 {
 #ifdef _F05_AlphaTest
-	vec4 albedo = texture2D( albedoMap, texCoords * vec2( 1, -1 ) ) * matDiffuseCol;
+	vec4 albedo = texture2D( albedoMap, texCoords*vec2(1.0,-1.0)) * matDiffuseCol;
 	if( albedo.a < 0.9 ) discard;
 #endif
 	
@@ -248,11 +265,13 @@ void main( void )
 #ifdef _F03_ParallaxMapping
 	#define _F02_NormalMapping
 #endif
-
 #include "shaders/utilityLib/fragLighting.glsl" 
 
 uniform vec4 matDiffuseCol;
 uniform vec4 matSpecParams;
+#ifdef _F08_WATER
+	uniform vec4 waterParams;
+#endif
 uniform sampler2D albedoMap;
 #ifdef _F02_NormalMapping
 	uniform sampler2D normalMap;
@@ -275,7 +294,7 @@ varying vec2 texCoords2;
 #ifdef _F03_ParallaxMapping
 	varying vec3 eyeTS;
 #endif
-float normalmaptiling=1;
+float normalmaptiling=1.0;
 
 
 void main( void )
@@ -290,27 +309,34 @@ void main( void )
 	vec3 eye = normalize( eyeTS );
 	for( int i = 0; i < 4; ++i )
 	{
-		vec4 nmap = texture2D( normalMap, newCoords.st * vec2( 1, -1 )*normalmaptiling );
+		vec4 nmap = texture2D( normalMap, newCoords.st * vec2( 1.0, -1.0 )*normalmaptiling );
 		float height = nmap.a * plxScale + plxBias;
 		newCoords += (height - newCoords.p) * nmap.z * eye;
 	}
 #endif
 
 	// Flip texture vertically to match the GL coordinate system
-	//newCoords.t *= -1.0;
+	newCoords.t *= -1.0;
 	vec4 albedo = pow(texture2D(albedoMap, newCoords.st),vec4(2.2))*matDiffuseCol;
 	
 	
 #ifdef _F05_AlphaTest
 	if( albedo.a < 0.9 ) discard;
 #endif
-	
-#ifdef _F02_NormalMapping
-	vec3 normalMap = texture2D( normalMap, newCoords.st *normalmaptiling).rgb * 2.0 - 1.0;
-	vec3 normal = tsbMat * normalMap;
+#ifdef _F08_WATER
+	float moveFactor = waterParams.r*0.04;
+	vec3 n1 = texture2D( normalMap, vec2(newCoords.x+moveFactor,newCoords.y)).rgb * 2.0 - 1.0;
+	vec3 n2 = texture2D( normalMap, vec2(newCoords.x+moveFactor,newCoords.y+moveFactor)).rgb * 2.0 - 1.0;
+	vec3 normal = tsbMat * ((n1+n2)/2);
 #else
-	vec3 normal = tsbNormal;
+ 	#ifdef _F02_NormalMapping
+		vec3 normalMap = texture2D( normalMap, newCoords.st*normalmaptiling ).rgb * 2.0 - 1.0;
+		vec3 normal = tsbMat * normalMap;
+	#else
+		vec3 normal = tsbNormal;
+	#endif
 #endif
+
 
 	vec3 newPos = pos.xyz;
 
@@ -323,7 +349,8 @@ void main( void )
 	#endif
 	gl_FragColor.rgb =
 		calcPhongSpotLight( newPos, normalize( normal ), albedo.rgb, matSpecParams.rgb,
-		                    spec, -vsPos.z, 0 );
+		                    spec, -vsPos.z, 0.0 );
+	//gl_FragColor.a = albedo.a;
 }
 
 
@@ -341,6 +368,13 @@ uniform samplerCube ambientMap;
 uniform sampler2D lightMap;
 uniform sampler2D detailmap;
 uniform sampler2D lightdirmap;
+uniform vec4 matSpecParams;
+uniform vec4 matDiffuseCol;
+#ifdef _F08_WATER
+	uniform vec4 waterParams;
+#endif 
+
+
 
 #ifdef _F02_NormalMapping
 	uniform sampler2D normalMap;
@@ -369,12 +403,12 @@ uniform mat4 viewMat;
 #endif
 
 
-float normalmaptiling=1;
+float normalmaptiling=1.0;
 
 
 void main( void )
 {
-	vec3 newCoords = vec3( texCoords, 0 );
+	vec3 newCoords = vec3( texCoords, 0.0 );
 	
 #ifdef _F03_ParallaxMapping	
 	const float plxScale = 0.03;
@@ -391,14 +425,15 @@ void main( void )
 #endif
 
 	// Flip texture vertically to match the GL coordinate system
-	//newCoords.t *= -1.0;
+	newCoords.t *= -1.0;
+	//*vec2(1,-1)
+	vec4 albedo = pow(texture2D(albedoMap, newCoords.st),vec4(2.2))*matDiffuseCol;
+	//albedo = vec4(newCoords.s,newCoords.t,1,1)*0.1;
+	vec4 light =  pow(texture2D(lightMap, texCoords2.st*vec2(1.0,-1.0)),vec4(1.0));
 
-	vec4 albedo = pow(texture2D(albedoMap, newCoords.st),vec4(2.2));
-	vec4 light =  pow(texture2D(lightMap, texCoords2.st),vec4(1));
-
-	float matspec = 1.0;
+	float matspec = matSpecParams.a;
 #ifdef _F06_SPECMAP	
-	matspec = pow(texture2D(specmap, newCoords.st),vec4(1.0)).r;
+	matspec *= pow(texture2D(specmap, newCoords.st),vec4(1.0)).r;
 #endif
 
 #ifdef _F05_AlphaTest
@@ -406,36 +441,52 @@ void main( void )
 #endif
 	
 	float lighpow = 1.0;
-	vec3 fcol = (max(light.rgb*lighpow,0.4))*albedo.rgb;
+	vec3 fcol = (max(light.rgb*lighpow,0.0))*albedo.rgb;
 	gl_FragColor.rgb =fcol;
 	
 
-	#ifdef _F02_NormalMapping
-		vec3 normalMap = texture2D( normalMap, newCoords.st*normalmaptiling ).rgb * 2.0 - 1.0;
-		vec3 normal = tsbMat * normalMap;
+	#ifdef _F08_WATER
+		float moveFactor = waterParams.r*0.04;
+		vec3 n1 = texture2D( normalMap, vec2(newCoords.x+moveFactor,newCoords.y)).rgb * 2.0 - 1.0;
+		vec3 n2 = texture2D( normalMap, vec2(newCoords.x+moveFactor,newCoords.y+moveFactor)).rgb * 2.0 - 1.0;
+		vec3 normal = tsbMat * ((n1+n2)/2);
 	#else
-		vec3 normal = tsbNormal;
+	 	#ifdef _F02_NormalMapping
+			vec3 normalMap = texture2D( normalMap, newCoords.st*normalmaptiling ).rgb * 2.0 - 1.0;
+			vec3 normal = tsbMat * normalMap;
+		#else
+			vec3 normal = tsbNormal;
+		#endif
 	#endif
-
+	
 
 #ifdef _F04_EnvMapping
 	vec3 refl = textureCube(envMap, reflect( pos.xyz - viewerPos, normalize( normal ) ) ).rgb;
 	refl = pow(refl,vec3(2.2));
 	//gl_FragColor.rgb =(max(light.rgb*lighpow,0.4)+refl*6*max(matspec,0.1))*albedo.rgb;
-	gl_FragColor.rgb +=refl*matspec*1;
+	gl_FragColor.rgb +=refl*matspec*0.2;
 	
 
 #endif
 	vec3 viewDir = viewerPos - pos.xyz;
 	//Fog parameters, could make them uniforms and pass them into the fragment shader
-	float fog_maxdist = 6000;
-	float fog_mindist = 50;
-	vec3  fog_colour = vec3(0.82,0.86,0.57);
+	float fog_maxdist = 9000.0;
+	float fog_mindist = 100.0;
+	vec3  fog_colour = vec3(0.40,0.41,0.34);
 	// Calculate fog
 	float dist = length(viewDir);
 	float fog_factor = (fog_maxdist - dist)/(fog_maxdist - fog_mindist);
 	fog_factor = clamp(fog_factor, 0.0, 1.0);
 	fog_factor *= fog_factor;
 	gl_FragColor.rgb = mix(fog_colour, gl_FragColor.rgb, fog_factor);
+
+	gl_FragColor.a = albedo.a;
+
+	#ifdef _F08_WATER
+		vec3 upVector = vec3(1.0, 1.0, 0.0);
+		float fresnelTerm = max(dot(viewDir, upVector), 0.0 );
+		//gl_FragColor.rgb = fresnelTerm;
+	#endif
+	//gl_FragColor.rgb = albedo.rgb;
 	
 }
