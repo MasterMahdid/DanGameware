@@ -1,1 +1,1 @@
-py entry_point.py
+py D:\Alvahshi\game\sources\tools\blendexport\entry_point.py

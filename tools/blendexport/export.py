@@ -3,10 +3,14 @@ import sys
 import os
 import re
 import shutil
-config = {'name':'pillars/stonepillar'}
+import json
+with open("export.json", 'r') as file:
+	j = file.read()
+	config = json.loads(j)
 name=config['name']
-fn = sys.argv[-1]
-basename= os.path.splitext(fn)[0]
+blendfn = sys.argv[-1]
+basename= os.path.splitext(blendfn)[0]
+objfn = basename+".obj"
 content_dir = os.environ["ALVAHSHI_CONTENT"]
 basealv = os.environ["ALVAHSHI_BASEQ3"]
 
@@ -17,9 +21,9 @@ if os.path.isdir(model_path)==False:
 model_content_path = content_dir+'/models/'+name
 if os.path.isdir(model_content_path)==False:
 	os.makedirs(model_content_path, exist_ok=True)
-print("Blender export scene in obj Format in file "+fn)
+print("Blender export scene in obj Format in file "+objfn)
 # Doc can be found here: https://docs.blender.org/api/current/bpy.ops.export_scene.html
-bpy.ops.export_scene.obj(filepath=fn)
+bpy.ops.export_scene.obj(filepath=objfn)
 matfn = basename+".mtl"
 data = ''
 with open(matfn, 'r') as file:
@@ -96,11 +100,11 @@ with open(matfn, 'w') as file:
 	file.writelines(LL)
 
 	
-shutil.copyfile(fn, basealv+'/models/'+name+"/"+fn)
+shutil.copyfile(objfn, basealv+'/models/'+name+"/"+objfn)
 shutil.copyfile(matfn, basealv+'/models/'+name+"/"+matfn)
 
 #quit()
-os.remove(fn)
+os.remove(objfn)
 os.remove(daefn)
 #os.remove(fbxfn)
 os.remove(matfn)

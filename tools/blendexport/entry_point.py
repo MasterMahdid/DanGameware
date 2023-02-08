@@ -1,4 +1,8 @@
 import os
-print("awdadw")
-#cmd = "blender stonepillar.blend --background --python export.py -- stonepillar.obj"
-#os.system(cmd)
+import json
+with open("export.json", 'r') as file:
+	j = file.read()
+	config = json.loads(j)
+
+cmd = "blender %s --background --python D:\\Alvahshi\\game\\sources\\tools\\blendexport\\export.py -- %s"%(config['input'],config['input'])
+os.system(cmd)
