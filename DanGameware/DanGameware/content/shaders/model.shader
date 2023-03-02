@@ -470,17 +470,17 @@ void main( void )
 #endif
 	vec3 viewDir = viewerPos - pos.xyz;
 	//Fog parameters, could make them uniforms and pass them into the fragment shader
-	float fog_maxdist = 9000.0;
+	float fog_maxdist = 3000.0;
 	float fog_mindist = 100.0;
-	vec3  fog_colour = vec3(0.40,0.41,0.34);
+	vec3  fog_colour = vec3(0.40,0.2,0.2);
 	// Calculate fog
 	float dist = length(viewDir);
 	float fog_factor = (fog_maxdist - dist)/(fog_maxdist - fog_mindist);
 	fog_factor = clamp(fog_factor, 0.0, 1.0);
 	fog_factor *= fog_factor;
-	gl_FragColor.rgb = mix(fog_colour, gl_FragColor.rgb, fog_factor);
+	//gl_FragColor.rgb = mix(fog_colour, gl_FragColor.rgb, fog_factor);
 
-	gl_FragColor.a = albedo.a;
+	//gl_FragColor.a = albedo.a;
 
 	#ifdef _F08_WATER
 		vec3 upVector = vec3(1.0, 1.0, 0.0);
