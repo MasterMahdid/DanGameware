@@ -3,7 +3,7 @@
 // Horde3D
 //   Next-Generation Graphics Engine
 // --------------------------------------
-// Copyright (C) 2006-2021 Nicolas Schulz and Horde3D team
+// Copyright (C) 2006-2016 Nicolas Schulz and Horde3D team
 //
 // This software is distributed under the terms of the Eclipse Public License v1.0.
 // A copy of the license may be obtained at: http://www.eclipse.org/legal/epl-v10.html
@@ -53,9 +53,8 @@ struct ResourceFlags
 		NoTexMipmaps = 4,
 		TexCubemap = 8,
 		TexDynamic = 16,
-		TexSRGB = 32,
-		TexRenderable = 64,
-		TexDepthBuffer = 128,
+		TexRenderable = 32,
+		TexSRGB = 64
 	};
 };
 
@@ -90,7 +89,7 @@ public:
 	ResHandle getHandle() const { return _handle; }
 	bool isLoaded() const { return _loaded; }
 	void addRef() { ++_refCount; }
-    void subRef() { ASSERT(_refCount > 0 ); --_refCount; }
+    void subRef() { --_refCount; ASSERT(_refCount >= 0 ); }
 
 protected:
 	int                  _type;
@@ -117,9 +116,9 @@ public:
 	~SmartResPtr() { subRef(); }
 
 	T &operator*() const { return *_ptr; }
-	T *operator->() const { return _ptr; }
+    T *operator->() const { return _ptr; }
 	operator T*() const { return _ptr; }
-	operator const T*() const { return _ptr; }
+    operator const T*() const { return _ptr; }
 	operator bool() const { return _ptr != 0x0; }
 	T *getPtr() const { return _ptr; }
 	
@@ -135,7 +134,7 @@ private:
 	void subRef() { if( _ptr != 0x0 ) _ptr->subRef(); }
 
 private:
-	T  *_ptr;
+    T  *_ptr;
 };
 
 typedef SmartResPtr< Resource > PResource;

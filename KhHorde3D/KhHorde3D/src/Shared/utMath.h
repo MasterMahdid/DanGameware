@@ -3,7 +3,7 @@
 // Horde3D
 //   Next-Generation Graphics Engine
 // --------------------------------------
-// Copyright (C) 2006-2021 Nicolas Schulz and Horde3D team
+// Copyright (C) 2006-2016 Nicolas Schulz and Horde3D team
 //
 // This software is distributed under the terms of the Eclipse Public License v1.0.
 // A copy of the license may be obtained at: http://www.eclipse.org/legal/epl-v10.html
@@ -63,17 +63,17 @@ namespace Math
 // General
 // -------------------------------------------------------------------------------------------------
 
-inline float degToRad( float f )
+static inline float degToRad( float f ) 
 {
 	return f * 0.017453293f;
 }
 
-inline float radToDeg( float f )
+static inline float radToDeg( float f ) 
 {
 	return f * 57.29577951f;
 }
 
-inline float clamp( float f, float min, float max )
+static inline float clamp( float f, float min, float max )
 {
 	if( f < min ) f = min;
 	else if( f > max ) f = max;
@@ -81,27 +81,20 @@ inline float clamp( float f, float min, float max )
 	return f;
 }
 
-inline float minf( float a, float b )
+static inline float minf( float a, float b )
 {
 	return a < b ? a : b;
 }
 
-inline float maxf( float a, float b )
+static inline float maxf( float a, float b )
 {
 	return a > b ? a : b;
 }
 
-inline float fsel( float test, float a, float b )
+static inline float fsel( float test, float a, float b )
 {
 	// Branchless selection
 	return test >= 0 ? a : b;
-}
-
-// Computes a/b, rounded up
-// To be used for positive a and b and small numbers (beware of overflows)
-inline int idivceil( int a, int b )
-{
-	return (a + b - 1) / b;
 }
 
 
@@ -109,14 +102,14 @@ inline int idivceil( int a, int b )
 // Conversion
 // -------------------------------------------------------------------------------------------------
 
-inline int ftoi_t( double val )
+static inline int ftoi_t( double val )
 {
 	// Float to int conversion using truncation
 	
 	return (int)val;
 }
 
-inline int ftoi_r( double val )
+static inline int ftoi_r( double val )
 {
 	// Fast round (banker's round) using Sree Kotay's method
 	// This function is much faster than a naive cast from float to int
@@ -135,140 +128,6 @@ inline int ftoi_r( double val )
 // -------------------------------------------------------------------------------------------------
 // Vector
 // -------------------------------------------------------------------------------------------------
-
-class Vec2f
-{
-public:
-	float x, y;
-	
-	
-	// ------------
-	// Constructors
-	// ------------
-	Vec2f() : x( 0.0f ), y( 0.0f )
-	{
-	}
-	
-	explicit Vec2f( Math::NoInitHint )
-	{
-		// Constructor without default initialization
-	}
-	
-	Vec2f( const float x, const float y ) : x( x ), y( y )
-	{
-	}
-	
-	// ------
-	// Access
-	// ------
-	float operator[]( unsigned int index ) const
-	{
-		return *(&x + index);
-	}
-
-	float &operator[]( unsigned int index )
-	{
-		return *(&x + index);
-	}
-	
-	// -----------
-	// Comparisons
-	// -----------
-	bool operator==( const Vec2f &v ) const
-	{
-		return (x > v.x - Math::Epsilon && x < v.x + Math::Epsilon &&
-				y > v.y - Math::Epsilon && y < v.y + Math::Epsilon);
-	}
-	
-	bool operator!=( const Vec2f &v ) const
-	{
-		return (x < v.x - Math::Epsilon || x > v.x + Math::Epsilon ||
-				y < v.y - Math::Epsilon || y > v.y + Math::Epsilon);
-	}
-	
-	// ---------------------
-	// Arithmetic operations
-	// ---------------------
-	Vec2f operator-() const
-	{
-		return Vec2f( -x, -y );
-	}
-	
-	Vec2f operator+( const Vec2f &v ) const
-	{
-		return Vec2f( x + v.x, y + v.y );
-	}
-	
-	Vec2f &operator+=( const Vec2f &v )
-	{
-		return *this = *this + v;
-	}
-	
-	Vec2f operator-( const Vec2f &v ) const
-	{
-		return Vec2f( x - v.x, y - v.y );
-	}
-	
-	Vec2f &operator-=( const Vec2f &v )
-	{
-		return *this = *this - v;
-	}
-	
-	Vec2f operator*( const float f ) const
-	{
-		return Vec2f( x * f, y * f );
-	}
-	
-	Vec2f &operator*=( const float f )
-	{
-		return *this = *this * f;
-	}
-	
-	Vec2f operator/( const float f ) const
-	{
-		return Vec2f( x / f, y / f );
-	}
-	
-	Vec2f &operator/=( const float f )
-	{
-		return *this = *this / f;
-	}
-	
-	// ----------------
-	// Special products
-	// ----------------
-	float dot( const Vec2f &v ) const
-	{
-		return x * v.x + y * v.y;
-	}
-	
-	// ----------------
-	// Other operations
-	// ----------------
-	float length() const
-	{
-		return sqrtf( x * x + y * y );
-	}
-	
-	Vec2f normalized() const
-	{
-		float invLen = 1.0f / length();
-		return Vec2f( x * invLen, y * invLen );
-	}
-	
-	void normalize()
-	{
-		float invLen = 1.0f / length();
-		x *= invLen;
-		y *= invLen;
-	}
-	
-	Vec2f lerp( const Vec2f &v, float f ) const
-	{
-		return Vec2f( x + (v.x - x) * f, y + (v.y - y) * f );
-	}
-};
-
 
 class Vec3f
 {
@@ -289,6 +148,10 @@ public:
 	}
 	
 	Vec3f( const float x, const float y, const float z ) : x( x ), y( y ), z( z ) 
+	{
+	}
+
+	Vec3f( const Vec3f &v ) : x( v.x ), y( v.y ), z( v.z )
 	{
 	}
 
@@ -391,11 +254,6 @@ public:
 		return sqrtf( x * x + y * y + z * z );
 	}
 
-	float length_squared() const
-	{
-		return x * x + y * y + z * z;
-	}
-
 	Vec3f normalized() const
 	{
 		float invLen = 1.0f / length();
@@ -455,22 +313,6 @@ public:
 	{
 	}
 
-	// ------
-	// Access
-	// ------
-	float operator[]( unsigned int index ) const
-	{
-		return *(&x + index);
-	}
-
-	float &operator[]( unsigned int index )
-	{
-		return *(&x + index);
-	}
-
-	// ---------------------
-	// Arithmetic operations
-	// ---------------------
 	Vec4f operator+( const Vec4f &v ) const
 	{
 		return Vec4f( x + v.x, y + v.y, z + v.z, w + v.w );
@@ -548,18 +390,18 @@ public:
 		
 		Quaternion q1( q );
 
-		// Calculate cosine
-		float cosTheta = x * q.x + y * q.y + z * q.z + w * q.w;
+        // Calculate cosine
+        float cosTheta = x * q.x + y * q.y + z * q.z + w * q.w;
 
-		// Use the shortest path
-		if( cosTheta < 0 )
+        // Use the shortest path
+        if( cosTheta < 0 )
 		{
 			cosTheta = -cosTheta; 
 			q1.x = -q.x; q1.y = -q.y;
 			q1.z = -q.z; q1.w = -q.w;
-		}
+        }
 
-		// Initialize with linear interpolation
+        // Initialize with linear interpolation
 		float scale0 = 1 - t, scale1 = t;
 		
 		// Use spherical interpolation only if the quaternions are not very close
@@ -602,9 +444,9 @@ public:
 	{
 		float len = x * x + y * y + z * z + w * w;
 		if( len > 0 )
-		{
-			float invLen = 1.0f / len;
-			return Quaternion( -x * invLen, -y * invLen, -z * invLen, w * invLen );
+        {
+            float invLen = 1.0f / len;
+            return Quaternion( -x * invLen, -y * invLen, -z * invLen, w * invLen );
 		}
 		else return Quaternion();
 	}
@@ -868,19 +710,19 @@ public:
 	// ---------------
 	// Transformations
 	// ---------------
-	void translate( const float tx, const float ty, const float tz )
+	void translate( const float x, const float y, const float z )
 	{
-		*this = TransMat( tx, ty, tz ) * *this;
+		*this = TransMat( x, y, z ) * *this;
 	}
 
-	void scale( const float sx, const float sy, const float sz )
+	void scale( const float x, const float y, const float z )
 	{
-		*this = ScaleMat( sx, sy, sz ) * *this;
+		*this = ScaleMat( x, y, z ) * *this;
 	}
 
-	void rotate( const float rx, const float ry, const float rz )
+	void rotate( const float x, const float y, const float z )
 	{
-		*this = RotMat( rx, ry, rz ) * *this;
+		*this = RotMat( x, y, z ) * *this;
 	}
 
 	// ---------------
@@ -891,13 +733,13 @@ public:
 	{
 		Matrix4f m( *this );
 		
-		for( unsigned int maty = 0; maty < 4; ++maty )
+		for( unsigned int y = 0; y < 4; ++y )
 		{
-			for( unsigned int matx = maty + 1; matx < 4; ++matx ) 
+			for( unsigned int x = y + 1; x < 4; ++x ) 
 			{
-				float tmp = m.c[matx][maty];
-				m.c[matx][maty] = m.c[maty][matx];
-				m.c[maty][matx] = tmp;
+				float tmp = m.c[x][y];
+				m.c[x][y] = m.c[y][x];
+				m.c[y][x] = tmp;
 			}
 		}
 

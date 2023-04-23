@@ -3,7 +3,7 @@
 // Horde3D
 //   Next-Generation Graphics Engine
 // --------------------------------------
-// Copyright (C) 2006-2021 Nicolas Schulz and Horde3D team
+// Copyright (C) 2006-2016 Nicolas Schulz and Horde3D team
 //
 // This software is distributed under the terms of the Eclipse Public License v1.0.
 // A copy of the license may be obtained at: http://www.eclipse.org/legal/epl-v10.html
@@ -230,7 +230,7 @@ std::string CodeResource::assembleCode() const
 
 void CodeResource::updateShaders()
 {
-	auto resources = Modules::resMan().getResources();
+    std::vector< Resource * >& resources = Modules::resMan().getResources();
 	for( uint32 i = 0; i < resources.size(); ++i )
 	{
 		Resource *res = resources[ i ];
@@ -397,11 +397,6 @@ string ShaderResource::_tmpCodeCS = "";
 string ShaderResource::_tmpCodeTSCtl = "";
 string ShaderResource::_tmpCodeTSEval = "";
 
-// Parsing constants
-static const char *identifier = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-static const char *intnum = "+-0123456789";
-static const char *floatnum = "+-0123456789.eE";
-
 
 ShaderResource::ShaderResource( const string &name, int flags ) :
 	Resource( ResourceTypes::Shader, name, flags )
@@ -422,27 +417,13 @@ void ShaderResource::initializationFunc()
 	switch ( Modules::renderer().getRenderDeviceType() )
 	{
 		case RenderBackendType::OpenGL4:
-		{
-			_vertPreamble = "#version 330\n";
-			_fragPreamble = "#version 330\n";
-			_geomPreamble = "#version 330\n";
+			_vertPreamble = "#version 330\r\n";
+			_fragPreamble = "#version 330\r\n";
+			_geomPreamble = "#version 330\r\n";
 			_tessCtlPreamble = "#version 410\r\n";
 			_tessEvalPreamble = "#version 410\r\n";
-			_computePreamble = "#version 430\n";
-			
+			_computePreamble = "#version 430\r\n";
 			break;
-		}
-		case RenderBackendType::OpenGLES3:
-		{
-			_vertPreamble = "#version 300 es\n precision highp float;\n";
-			_fragPreamble = "#version 300 es\n precision highp float;\n precision highp sampler2D;\n precision highp sampler2DShadow;\n";
-			_geomPreamble = "#version 320 es\n precision highp float;\n";
-			_tessCtlPreamble = "#version 320 es\n precision highp float;\n";
-			_tessEvalPreamble = "#version 320 es\n precision highp float;\n";
-			_computePreamble = "#version 310 es\n";
-
-			break;
-		}
 		default:
 			break;
 	}
@@ -514,6 +495,11 @@ bool ShaderResource::parseFXSection( char *data )
 		}
 		++p;
 	}
+	
+	// Parsing
+	const char *identifier = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+	const char *intnum = "+-0123456789";
+	const char *floatnum = "+-0123456789.eE";
 
 	std::vector< uint8 > unitFree( Modules::renderer().getRenderDevice()->getCaps().maxTexUnitCount - 4, true ); // I don't understand why marciano excluded 4 texunits, but currently I'll leave it this way  
 //	bool unitFree[12] = {true, true, true, true, true, true, true, true, true, true, true, true}; 
@@ -534,7 +520,7 @@ bool ShaderResource::parseFXSection( char *data )
 				if( !tok.seekToken( ">" ) ) return raiseError( "FX: expected '>'", tok.getLine() );
 			
 			if( tok.checkToken( "=" ) )
-				uniform.defValues[0] = toFloat( tok.getToken( floatnum ) );
+				uniform.defValues[0] = (float)atof( tok.getToken( floatnum ) );
 			if( !tok.checkToken( ";" ) ) return raiseError( "FX: expected ';'", tok.getLine() );
 
 			_uniforms.push_back( uniform );
@@ -554,10 +540,10 @@ bool ShaderResource::parseFXSection( char *data )
 			if( tok.checkToken( "=" ) )
 			{
 				if( !tok.checkToken( "{" ) ) return raiseError( "FX: expected '{'", tok.getLine() );
-				uniform.defValues[0] = toFloat( tok.getToken( floatnum ) );
-				if( tok.checkToken( "," ) ) uniform.defValues[1] = toFloat( tok.getToken( floatnum ) );
-				if( tok.checkToken( "," ) ) uniform.defValues[2] = toFloat( tok.getToken( floatnum ) );
-				if( tok.checkToken( "," ) ) uniform.defValues[3] = toFloat( tok.getToken( floatnum ) );
+				uniform.defValues[0] = (float)atof( tok.getToken( floatnum ) );
+				if( tok.checkToken( "," ) ) uniform.defValues[1] = (float)atof( tok.getToken( floatnum ) );
+				if( tok.checkToken( "," ) ) uniform.defValues[2] = (float)atof( tok.getToken( floatnum ) );
+				if( tok.checkToken( "," ) ) uniform.defValues[3] = (float)atof( tok.getToken( floatnum ) );
 				if( !tok.checkToken( "}" ) ) return raiseError( "FX: expected '}'", tok.getLine() );
 			}
 			if( !tok.checkToken( ";" ) ) return raiseError( "FX: expected ';'", tok.getLine() );
@@ -720,28 +706,6 @@ bool ShaderResource::parseFXSection( char *data )
 // 				if ( !tok.checkToken( ";" ) ) return raiseError( "FX: expected ';'", tok.getLine() );
 			}
 		}
-		else if ( tok.checkToken( "OpenGLES3" ) )
-		{
-			if ( !tok.checkToken( "{" ) ) return raiseError( "FX: expected '{'", tok.getLine() );
-			while ( true )
-			{
-				if ( !tok.hasToken() )
-					return raiseError( "FX: expected '}'", tok.getLine() );
-				else if ( tok.checkToken( "}" ) )
-					break;
-				else if ( tok.checkToken( "context" ) )
-				{
-					bool success = parseFXSectionContext( tok, identifier, RenderBackendType::OpenGLES3 );
-					if ( !success )
-					{
-						return false;
-					}
-				}
-				else
-					return raiseError( "FX: unexpected token", tok.getLine() );
-				// 				if ( !tok.checkToken( ";" ) ) return raiseError( "FX: expected ';'", tok.getLine() );
-			}
-		}
 		else
 		{
 			return raiseError( "FX: unexpected token", tok.getLine() );
@@ -775,6 +739,9 @@ bool ShaderResource::parseFXSectionContext( Tokenizer &tok, const char * identif
 {
 	ShaderContext context;
 	_tmpCodeVS = _tmpCodeFS = _tmpCodeGS = _tmpCodeCS = _tmpCodeTSCtl = _tmpCodeTSEval = "";
+	
+	const char *intnum = "+-0123456789";
+	const char *floatnum = "+-0123456789.eE";
 
 	bool vertexShaderAvailable, fragmentShaderAvailable, geometryShaderAvailable, computeShaderAvailable, 
 		 tessControlShaderAvailable, tessEvalShaderAvailable;
@@ -1274,7 +1241,7 @@ bool ShaderResource::compileCombination( ShaderContext &context, ShaderCombinati
 				{
 					switch ( i )
 					{
-						case 0 : // vertex shader
+						case 0: // vertex shader
 							dumpFileName = "shdDumpVS.txt"; output = &_tmpCodeVS; break;
 						case 1:  // fragment shader
 							dumpFileName = "shdDumpFS.txt"; output = &_tmpCodeFS; break;
@@ -1302,11 +1269,11 @@ bool ShaderResource::compileCombination( ShaderContext &context, ShaderCombinati
 		rdi->bindShader( sc.shaderObj );
 
 		// Find samplers in compiled shader
-		sc.samplersLocs.reserve( _samplers.size() );
+		sc.customSamplers.reserve( _samplers.size() );
 		for( uint32 i = 0; i < _samplers.size(); ++i )
 		{
 			int samplerLoc = rdi->getShaderSamplerLoc( sc.shaderObj, _samplers[i].id.c_str() );
-			sc.samplersLocs.push_back( samplerLoc );
+			sc.customSamplers.push_back( samplerLoc );
 			
 			// Set texture unit
 			if( samplerLoc >= 0 )
@@ -1314,18 +1281,18 @@ bool ShaderResource::compileCombination( ShaderContext &context, ShaderCombinati
 		}
 		
 		// Find buffers in compiled shader
-		sc.bufferLocs.reserve( _buffers.size() );
+		sc.customBuffers.reserve( _buffers.size() );
 		for ( uint32 i = 0; i < _buffers.size(); ++i )
 		{
 			int bufferLoc = rdi->getShaderBufferLoc( sc.shaderObj, _buffers[ i ].id.c_str() );
-			sc.bufferLocs.push_back( bufferLoc );
+			sc.customBuffers.push_back( bufferLoc );
 		}
 
 		// Find uniforms in compiled shader
-		sc.uniLocs.reserve( Modules::renderer().totalEngineUniforms() + _uniforms.size() );
+		sc.customUniforms.reserve( _uniforms.size() );
 		for( uint32 i = 0; i < _uniforms.size(); ++i )
 		{
-			sc.uniLocs.push_back(
+			sc.customUniforms.push_back(
 				rdi->getShaderConstLoc( sc.shaderObj, _uniforms[i].id.c_str() ) );
 		}
 	}

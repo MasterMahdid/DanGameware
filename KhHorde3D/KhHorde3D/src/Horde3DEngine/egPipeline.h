@@ -3,7 +3,7 @@
 // Horde3D
 //   Next-Generation Graphics Engine
 // --------------------------------------
-// Copyright (C) 2006-2021 Nicolas Schulz and Horde3D team
+// Copyright (C) 2006-2016 Nicolas Schulz and Horde3D team
 //
 // This software is distributed under the terms of the Eclipse Public License v1.0.
 // A copy of the license may be obtained at: http://www.eclipse.org/legal/epl-v10.html
@@ -15,7 +15,6 @@
 
 #include "egPrerequisites.h"
 #include "egMaterial.h"
-#include <string.h>
 #include <string>
 #include <vector>
 
@@ -41,7 +40,7 @@ struct PipelineResData
 
 // =================================================================================================
 
-struct DefaultPipelineCommands
+struct PipelineCommands
 {
 	enum List
 	{
@@ -50,12 +49,11 @@ struct DefaultPipelineCommands
 		UnbindBuffers,
 		ClearTarget,
 		DrawGeometry,
-//		DrawOverlays,
+		DrawOverlays,
 		DrawQuad,
 		DoForwardLightLoop,
 		DoDeferredLightLoop,
-		SetUniform,
-		ExternalCommand = 256 // must be the last command
+		SetUniform
 	};
 };
 
@@ -111,14 +109,12 @@ protected:
 
 struct PipelineCommand
 {
-	std::vector< PipeCmdParam >			params;
-	DefaultPipelineCommands::List       command;
-	int									externalCommandID;
+	PipelineCommands::List       command;
+	std::vector< PipeCmdParam >  params;
 
-	PipelineCommand( DefaultPipelineCommands::List command )
+	PipelineCommand( PipelineCommands::List	command )
 	{
 		this->command = command;
-		externalCommandID = -1;
 	}
 };
 
@@ -155,39 +151,6 @@ struct RenderTarget
 		scale = 0;
 		format = TextureFormats::Unknown;
 	}
-};
-
-// =================================================================================================
-
-typedef const char *( *parsePipelineCommandFunc )( const char *commandName, void *xmlNodeParams, PipelineCommand &cmd );
-typedef void( *executePipelineCommandFunc )( const PipelineCommand *commandParams );
-
-struct PipelineCommandRegEntry
-{
-	std::string					comNameString;
-	parsePipelineCommandFunc	parseFunc;    // Called when pipeline command is parsed
-	executePipelineCommandFunc	executeFunc;  // Called when pipeline command is executed during rendering
-};
-
-class ExternalPipelineCommandsManager
-{
-public:
-
-	ExternalPipelineCommandsManager() {};
-	~ExternalPipelineCommandsManager() {};
-
-	void registerPipelineCommand( const std::string &commandName,  
-								  parsePipelineCommandFunc pf, executePipelineCommandFunc ef );
-
-	uint32 registeredCommandsCount() { return ( uint32 ) _registeredCommands.size(); }
-
-	const char *parseCommand( const char *commandName, void *xmlData, PipelineCommand &cmd, bool &success );
-
-	void executeCommand( const PipelineCommand &command );
-
-private:
-
-	std::vector< PipelineCommandRegEntry >  _registeredCommands;
 };
 
 // =================================================================================================

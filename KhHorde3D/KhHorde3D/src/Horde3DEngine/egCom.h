@@ -3,7 +3,7 @@
 // Horde3D
 //   Next-Generation Graphics Engine
 // --------------------------------------
-// Copyright (C) 2006-2021 Nicolas Schulz and Horde3D team
+// Copyright (C) 2006-2016 Nicolas Schulz and Horde3D team
 //
 // This software is distributed under the terms of the Eclipse Public License v1.0.
 // A copy of the license may be obtained at: http://www.eclipse.org/legal/epl-v10.html
@@ -45,8 +45,7 @@ struct EngineOptions
 		WireframeMode,
 		DebugViewMode,
 		DumpFailedShaders,
-		GatherTimeStats,
-		DebugRenderBackend
+		GatherTimeStats
 	};
 };
 
@@ -74,7 +73,6 @@ public:
 	bool  debugViewMode;
 	bool  dumpFailedShaders;
 	bool  gatherTimeStats;
-	bool  debugRenderBackend;
 };
 
 
@@ -103,10 +101,6 @@ struct LogMessage
 class EngineLog
 {
 public:
-	typedef void (*MessageCallback)(int, const char*);
-	// This is callable before the engine has been initialised to allow to get all the messages
-	static void setMessageCallback(MessageCallback f);
-
 	EngineLog();
 
 	void writeError( const char *msg, ... );
@@ -124,8 +118,6 @@ protected:
 	void pushMessage( int level, const char *msg, va_list ap );
 
 protected:
-	static MessageCallback    _callback;
-
 	Timer                     _timer;
 	char                      _textBuf[2048];
 	uint32                    _maxNumMessages;
@@ -154,8 +146,7 @@ struct EngineStats
 		ParticleGPUTime,
 		TextureVMem,
 		GeometryVMem,
-		ComputeGPUTime,
-		CullingTime
+		ComputeGPUTime
 	};
 };
 
@@ -183,8 +174,6 @@ protected:
 	Timer     _animTimer;
 	Timer     _geoUpdateTimer;
 	Timer     _particleSimTimer;
-	Timer	  _cullingTimer;
-
 	float     _frameTime;
 
 	GPUTimer  *_fwdLightsGPUTimer;
@@ -192,6 +181,7 @@ protected:
 	GPUTimer  *_shadowsGPUTimer;
 	GPUTimer  *_particleGPUTimer;
 	GPUTimer  *_computeGPUTimer;
+
 	friend class ProfSample;
 };
 
@@ -205,12 +195,7 @@ struct RenderDeviceCapabilities
 	{
 		GeometryShaders = 200,
 		Tessellation,
-		Compute,
-		TextureFloatRenderable,
-		TextureCompressionDXT,
-		TextureCompressionETC2,
-		TextureCompressionBPTC,
-		TextureCompressionASTC
+		Compute
 	};
 };
 

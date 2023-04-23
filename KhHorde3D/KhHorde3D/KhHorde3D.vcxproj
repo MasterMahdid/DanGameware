@@ -133,8 +133,6 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Extensions\Overlays\Source\extension.cpp" />
-    <ClCompile Include="src\Extensions\Overlays\Source\overlays.cpp" />
     <ClCompile Include="src\Horde3DEngine\egAnimatables.cpp" />
     <ClCompile Include="src\Horde3DEngine\egAnimation.cpp" />
     <ClCompile Include="src\Horde3DEngine\egCamera.cpp" />
