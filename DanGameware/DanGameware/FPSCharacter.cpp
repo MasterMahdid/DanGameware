@@ -64,7 +64,7 @@ FPSCharacter::FPSCharacter(H3DNode cam,gentity_t ent)
 	ent->speed = 0;
 	ent->movedir = Vector3df();
 	::player_ent = ent;
-	auto light = h3dAddLightNode(cam, "Light1", 0, "LIGHTING", "SHADOWMAP");
+	/*auto light = h3dAddLightNode(cam, "Light1", 0, "LIGHTING", "SHADOWMAP");
 	h3dSetNodeTransform(light, 0, 0, 0, -86, 0, 0, 1, 1, 1);
 	h3dSetNodeParamF(light, H3DLight::FovF, 0, 360);
 	h3dSetNodeParamF(light, H3DLight::RadiusF, 0,200);
@@ -73,7 +73,7 @@ FPSCharacter::FPSCharacter(H3DNode cam,gentity_t ent)
 	h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, 0.003f);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 0, 1);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, 0.75);
-	h3dSetNodeParamF(light, H3DLight::ColorF3, 2,0.50);
+	h3dSetNodeParamF(light, H3DLight::ColorF3, 2,0.50);*/
 	detectMat();
 
 	tween =  Tween();
@@ -155,7 +155,7 @@ void FPSCharacter::PhysicUpdate(float dt)
 	}
 	if (g_input.attack&& allow_attack)
 	{
-		g_weapon_axe->attack(pawn);
+		//g_weapon_axe->attack(pawn);
 		//onProjectileHit(Vector3df());
 		//allow_attack = false;
 	}
@@ -296,7 +296,7 @@ void FPSCharacter::onProjectileHit(Vector3df hit_pos)
 		tween.callFuncPeriodic(0, 2, [](float x) {bloodmask = x; }, 0.3, EASING_FUNCTION::Linear);
 		tween.callFuncPeriodic(0, 10, [](float x) {ofset_rz = x; },1, EASING_FUNCTION::Linear);
 		tween.callFuncPeriodic(head_height, -23, [](float x) {head_height = x; }, 1, EASING_FUNCTION::BounceEaseOut);
-		g_weapon_axe->death();
+		//g_weapon_axe->death();
 		khsound::play_sound(khsound::SOUND_DEATH);
 		tween.delayCall(1, [](){
 			map_reload();

@@ -85,6 +85,7 @@ void mapPreload(const char* name, std::function<void()> update)
 
 	WeaponAxe::initRes();
 	Enemy::add_res();
+	WeaponHandgun::initRes();
 
 	size_t sz2;
 	char* data = (char*)g_archive_reader.loadFileData(scene_path,sz2);
@@ -203,9 +204,16 @@ void mapLoad(const char* name, std::function<void()> update)
 	g_phyis.loadLevel(tri_data, tri_count);
 	
 
-	auto wx = new WeaponAxe();
+	/*auto wx = new WeaponAxe();
 	gameObjects_array.push_back(wx);
-	g_weapon_axe = wx;
+	g_weapon_axe = wx;*/
+
+
+	auto hg = new WeaponHandgun();
+	gameObjects_array.push_back(hg);
+	g_weapon_handgun = hg;
+
+
 
 	if (g_entities != nullptr)
 		delete[] g_entities;

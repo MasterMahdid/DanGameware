@@ -433,7 +433,7 @@ void main_load_map()
 {
 	g_tween = Tween();
 	auto t1 = glfwGetTime();
-	mapLoad("city", &mapLoadUpdate);
+	mapLoad("street", &mapLoadUpdate);
 	detectMaterials();
 	initWaterShader();
 	dw_console_log("map load time = %0.2f", glfwGetTime() - t1);

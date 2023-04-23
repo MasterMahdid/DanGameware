@@ -50,8 +50,8 @@ void flyThroughCam::Update(float dt)
 
 	float x, y, z, rx, ry;
 	h3dGetNodeTransform(_cam, &x, &y, &z, &rx, &ry, nullptr, nullptr, nullptr, nullptr);
-	float speed = 150* g_input.dy;
-	float speedstr = 150 * -g_input.dx;
+	float speed = 50* g_input.dy;
+	float speedstr = 50 * -g_input.dx;
 	{
 		float dir_rad_y = ry*H3D_DEG2RAD;
 		float dir_rad_x = rx*H3D_DEG2RAD;

@@ -69,6 +69,23 @@ public:
 	void land();
 	void death();
 };
+class WeaponHandgun : public GameObject
+{
+private:
+	float animTime;
+	H3DNode modelNode;
+public:
+	WeaponHandgun();
+	static void initRes();
+	//~WeaponHandgun();
+	//virtual void PhysicUpdate(float dt)override;
+	virtual void Update(float dt)override;
+	void setAnimSpeed(float speed);
+	void attack(Hndl ignorePawn);
+	void jump();
+	void land();
+	void death();
+};
 class ProjectileAxe :public GameObject
 {
 private:
@@ -83,6 +100,7 @@ public:
 	virtual void Update(float dt)override;
 };
 extern WeaponAxe* g_weapon_axe;
+extern WeaponHandgun* g_weapon_handgun;
 
 
 
