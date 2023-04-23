@@ -13,7 +13,7 @@ extern std::vector<GameObject*> gameObjects_array;
 namespace WeaponHandgun_internal
 {
 	H3DRes hg,hganim;
-	float animspeed = 10;
+	float animspeed = 5;
 	Tween tweener;
 	bool attacking = false;
 	bool allow_attack = true;
@@ -54,7 +54,7 @@ void WeaponHandgun::Update(float dt)
 	if (attacking == false)
 	{
 		this->animTime += animspeed*dt;
-		//h3dSetModelAnimParams(this->modelNode, 0, this->animTime, 1);
+		h3dSetModelAnimParams(this->modelNode, 0, this->animTime, 1);
 	}
 	else
 	{

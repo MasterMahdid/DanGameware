@@ -12,7 +12,6 @@
 #include "khmath.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
-#include "Horde3DOverlays.h"
 
 #include "imgui_impl_opengl3.h"
 #include "MapManager.h"
@@ -35,8 +34,8 @@ Tween g_tween;
 #define WINDOW_WIDTH (1600)
 #define WINDOW_HEIGHT (900)
 #define FULL_SCREEN (0)
-#define MSAA_C (8)
-#define V_SYNC (1)
+#define MSAA_C (0)
+#define V_SYNC (0)
 
 H3DNode main_camera = 0;
 gentity_t g_entities = nullptr;
