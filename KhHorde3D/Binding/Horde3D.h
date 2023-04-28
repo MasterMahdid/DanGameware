@@ -16,7 +16,7 @@
 
 #ifndef DLL
 #	if defined( WIN32 ) || defined( _WINDOWS )
-#		define DLL extern "C" __declspec( dllimport )
+#		define DLL extern "C"
 #	else
 #  if defined( __GNUC__ ) && __GNUC__ >= 4
 #   define DLL extern "C" __attribute__ ((visibility("default")))

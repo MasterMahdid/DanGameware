@@ -75,7 +75,7 @@
 
 #ifndef DLLEXP
 #	ifdef PLATFORM_WIN
-#		define DLLEXP extern "C" __declspec( dllexport )
+#		define DLLEXP extern "C"
 #	else
 #		if defined( __GNUC__ ) && __GNUC__ >= 4
 #		  define DLLEXP extern "C" __attribute__ ((visibility("default")))
